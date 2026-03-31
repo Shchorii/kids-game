@@ -18,6 +18,16 @@ const GAME_CARDS = [
     bg: '#EDE9FE',
   },
   {
+    path: '/english',
+    title: 'אנגלית',
+    emoji: '🇬🇧',
+    desc: 'ראה תמונה ובחר מילה',
+    Icon: null,
+    gradient: 'from-blue-400 to-indigo-500',
+    shadow: 'shadow-blue-200',
+    bg: '#EFF6FF',
+  },
+  {
     path: '/math',
     title: 'משחק חשבון',
     emoji: '🧮',
@@ -104,7 +114,7 @@ export default function Home() {
             />
             <div className="relative flex items-center gap-4">
               <div className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-lg ${card.shadow} flex-shrink-0`}>
-                <card.Icon className="w-8 h-8 text-white" />
+                {card.Icon ? <card.Icon className="w-8 h-8 text-white" /> : <span className="text-2xl">{card.emoji}</span>}
               </div>
               <div className="flex-1">
                 <div className="text-xl font-black text-gray-800">{card.title}</div>
