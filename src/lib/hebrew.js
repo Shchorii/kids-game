@@ -35,13 +35,27 @@ export function generateLetterTiles(wordPlain, gridSize = 12, wordNiqqud = null)
   const numDistractors = Math.max(0, gridSize - wordGraphemes.length)
   const distractors = unusedLetters.sort(() => Math.random() - 0.5).slice(0, numDistractors)
 
-  // Correct tiles: plain letter for answer-checking, niqqud grapheme for display
+  // Common niqqud marks to assign randomly to distractor tiles
+  // so ALL tiles look similar — prevents guessing correct letters by niqqud presence
+  const RAND_NIQQUD = [
+    'ַ', // patach  ַ
+    'ָ', // kamatz  ָ
+    'ִ', // chirik  ִ
+    'ֵ', // tsere   ֵ
+    'ֶ', // segol   ֶ
+    'ּ', // dagesh  ּ
+    'ְ', // shva    ְ
+    'ֹ', // holam   ֹ
+  ]
+  const randNiqqud = () => RAND_NIQQUD[Math.floor(Math.random() * RAND_NIQQUD.length)]
+
+  // Correct tiles: plain letter for answer-checking, real niqqud grapheme for display
   const correctTiles = wordGraphemes.map((plain, idx) => ({
     plain,
     display: niqqudGraphemes[idx] || plain,
   }))
-  // Distractor tiles: plain letter, no niqqud
-  const distractorTiles = distractors.map((l) => ({ plain: l, display: l }))
+  // Distractor tiles: plain letter + random niqqud so all tiles look visually similar
+  const distractorTiles = distractors.map((l) => ({ plain: l, display: l + randNiqqud() }))
 
   const all = [...correctTiles, ...distractorTiles]
   return all.sort(() => Math.random() - 0.5).map((tile, i) => ({
