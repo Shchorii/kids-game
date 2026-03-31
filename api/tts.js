@@ -1,6 +1,5 @@
 // api/tts.js — server-side TTS via OpenAI, keeps API key safe
 
-export const config = { runtime: 'nodejs20.x' }
 
 const TTS_VOICE = 'nova'      // Best Hebrew pronunciation
 const TTS_MODEL = 'tts-1-hd'
