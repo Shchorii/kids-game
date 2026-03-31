@@ -31,8 +31,8 @@ export default function LetterTile({ letterId, letter, display, index, isUsed, i
       }
       transition={
         isWrong
-          ? { duration: 0.35, ease: 'easeInOut' }
-          : { type: 'spring', stiffness: 400, damping: 20, delay: index * 0.03 }
+          ? { duration: 0.3, ease: 'easeInOut' }
+          : { type: 'spring', stiffness: 500, damping: 18, delay: index * 0.025 }
       }
       onClick={() => !isUsed && onClick(letterId, letter)}
       disabled={isUsed}
@@ -51,8 +51,8 @@ export default function LetterTile({ letterId, letter, display, index, isUsed, i
         select-none cursor-pointer transition-colors duration-150
         ${isUsed ? 'cursor-not-allowed' : 'active:translate-y-1 active:shadow-none'}
       `}
-      whileHover={!isUsed ? { scale: 1.08, y: -2 } : {}}
-      whileTap={!isUsed ? { scale: 0.92, y: 2 } : {}}
+      whileHover={!isUsed ? { scale: 1.1, y: -3, rotate: [-1,1,-1,0] } : {}}
+      whileTap={!isUsed ? { scale: 0.85, y: 3 } : {}}
     >
       {display || letter}
     </motion.button>

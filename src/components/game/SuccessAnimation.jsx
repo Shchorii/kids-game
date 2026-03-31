@@ -18,7 +18,7 @@ function randomPraise() {
 }
 
 function Confetti() {
-  const pieces = Array.from({ length: 24 }, (_, i) => ({
+  const pieces = Array.from({ length: 36 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     color: ['#5B21B6', '#F97316', '#EAB308', '#10B981', '#F43F5E', '#0EA5E9'][i % 6],
@@ -80,14 +80,14 @@ export default function SuccessAnimation({ show, onComplete, stars = 3, revealWo
             transition={{ type: 'spring', stiffness: 380, damping: 22 }}
             className="bg-white rounded-5xl px-12 py-10 text-center shadow-2xl relative z-10"
           >
-            <div className="text-6xl mb-3">
+            <div className="text-5xl mb-2 flex gap-1 justify-center">
               {Array.from({ length: stars }).map((_, i) => (
                 <motion.span
                   key={i}
-                  initial={{ scale: 0, rotate: -30 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 400 }}
-                  className="inline-block"
+                  initial={{ scale: 0, rotate: -40, y: -20 }}
+                  animate={{ scale: 1, rotate: 0, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1, type: 'spring', stiffness: 500, damping: 14 }}
+                  className="inline-block drop-shadow-md"
                 >
                   ⭐
                 </motion.span>
@@ -95,11 +95,11 @@ export default function SuccessAnimation({ show, onComplete, stars = 3, revealWo
             </div>
             {revealWord && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.15 }}
-                className="text-4xl font-black text-violet-600 mb-2"
-                style={{ fontFamily: 'Heebo, Arial' }}
+                initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 300, damping: 18 }}
+                className="text-5xl font-black text-violet-600 mb-1"
+                style={{ fontFamily: 'Heebo, Arial', letterSpacing: '0.05em' }}
               >
                 {revealWord}
               </motion.div>

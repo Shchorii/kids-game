@@ -9,6 +9,8 @@ import SuccessAnimation from '@/components/game/SuccessAnimation'
 import SummaryScreen from '@/components/game/SummaryScreen'
 import NamePrompt from '@/components/game/NamePrompt'
 import { splitGraphemes, norm, stripNiqqud, generateLetterTiles } from '@/lib/hebrew'
+import FloatingObjects, { getThemeBg } from '@/components/game/FloatingObjects'
+import Mascot from '@/components/game/Mascot'
 import { getWords, saveProgress } from '@/lib/api'
 import { getCachedAudio, setCachedAudio } from '@/lib/storage'
 import { textToSpeech } from '@/lib/api'
@@ -45,6 +47,9 @@ export default function ListenAndBuild() {
   const [bestTime, setBestTime]         = useState(null)
   const [startTime, setStartTime]       = useState(null)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  const [streak, setStreak]             = useState(0)
+  const [mascotMood, setMascotMood]     = useState('idle')
+  const idleTimer                       = useRef(null)
 
   const currentWordData    = words[wordIndex] || null
   const currentWordDisplay = currentWordData?.word_niqqud || currentWordData?.word_plain || ''
@@ -73,6 +78,10 @@ export default function ListenAndBuild() {
       const timeTaken = Math.floor((Date.now() - startTime) / 1000)
       const earned = hintCount === 0 ? 3 : hintCount === 1 ? 2 : 1
       playWinSound(); setShowSuccess(true)
+      const newStreak = streak + 1
+      setStreak(newStreak)
+      setMascotMood(newStreak >= 3 ? 'streak' : 'correct')
+      setTimeout(() => setMascotMood('idle'), 2000)
       setCorrectCount((c) => c + 1); setStars((s) => s + earned)
       setTotalTime((t) => t + timeTaken)
       setBestTime((b) => (b === null || timeTaken < b ? timeTaken : b))
@@ -122,7 +131,11 @@ export default function ListenAndBuild() {
       playErrorSound(); setWrongId(id)
       clearTimeout(wrongTimer.current)
       wrongTimer.current = setTimeout(() => setWrongId(null), 500)
-      setWrongCount((c) => c + 1); return
+      setWrongCount((c) => c + 1)
+      setStreak(0)
+      setMascotMood('wrong')
+      setTimeout(() => setMascotMood('idle'), 1200)
+      return
     }
     setPlaced((p) => [...p, letter])
     setLetters((ls) => ls.map((l) => (l.id === id ? { ...l, used: true } : l)))
@@ -134,7 +147,12 @@ export default function ListenAndBuild() {
     setPlaced((p) => p.filter((_, idx) => idx !== i))
   }
 
-  const handleHint = () => { setShowHint(true); setHintCount((h) => h + 1); setTimeout(() => setShowHint(false), 3000) }
+  const handleHint = () => {
+    setShowHint(true); setHintCount((h) => h + 1)
+    setMascotMood('hint')
+    setTimeout(() => setShowHint(false), 3000)
+    setTimeout(() => setMascotMood('idle'), 2000)
+  }
   const handleReset = () => { setPlaced([]); setLetters((ls) => ls.map((l) => ({ ...l, used: false }))); setShowHint(false) }
   const handleNextWord = () => {
     setShowSuccess(false)
@@ -190,13 +208,17 @@ export default function ListenAndBuild() {
   const levelInfo = LEVELS.find((l) => l.value === level)
 
   return (
-    <div className="min-h-screen p-4 max-w-md mx-auto" style={{ background: 'var(--bg)' }}>
-      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-purple-200 opacity-40 blur-3xl" />
-        <div className="absolute bottom-0 -left-16 w-56 h-56 rounded-full bg-blue-200 opacity-30 blur-3xl" />
+    <div className={`min-h-screen p-4 max-w-md mx-auto bg-gradient-to-br ${getThemeBg(grade, level)}`}>
+      <FloatingObjects grade={grade} level={level} />
+      <div className="flex items-start justify-between mb-1">
+        <div className="flex-1">
+          <GameHeader stars={stars} current={wordIndex + 1} total={totalWords} childName={childName} />
+        </div>
+        <div className="mt-1 ml-2">
+          <Mascot mood={mascotMood} streak={streak} />
+        </div>
       </div>
-      <GameHeader stars={stars} current={wordIndex + 1} total={totalWords} childName={childName} />
-      <div className="flex gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-4">
         <button onClick={() => { setGrade(null); setLevel(null) }}
           className={`text-xs font-bold px-3 py-1.5 rounded-full border-2 ${gradeInfo.border} ${gradeInfo.bg} ${gradeInfo.text}`}>
           {gradeInfo.emoji} {gradeInfo.label}
@@ -204,6 +226,14 @@ export default function ListenAndBuild() {
         <span className={`text-xs font-bold px-3 py-1.5 rounded-full border-2 ${gradeInfo.border} ${gradeInfo.bg} ${gradeInfo.text}`}>
           {levelInfo.emoji} {levelInfo.label}
         </span>
+        {streak >= 2 && (
+          <motion.span
+            initial={{ scale: 0 }} animate={{ scale: 1 }}
+            className="text-xs font-black px-3 py-1.5 rounded-full bg-orange-500 text-white shadow-md"
+          >
+            🔥 ×{streak}
+          </motion.span>
+        )}
       </div>
       <motion.div key={currentWord} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-4xl p-6 shadow-lg border-2 border-purple-100 mb-5 text-center">
