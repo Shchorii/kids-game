@@ -2,6 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import ListenAndBuild from './pages/ListenAndBuild'
+import EnglishGame from './pages/EnglishGame'
 import CalculateGame from './pages/CalculateGame'
 import AdminWords from './pages/AdminWords'
 import Leaderboard from './pages/Leaderboard'
