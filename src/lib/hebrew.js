@@ -21,10 +21,12 @@ export function wordLevel(word) {
   return 3
 }
 
-// Generate letter tiles: correct letters + distractors to fill grid
-export function generateLetterTiles(wordPlain, gridSize = 12) {
+// Generate letter tiles: correct letters (with niqqud) + plain distractors
+export function generateLetterTiles(wordPlain, gridSize = 12, wordNiqqud = null) {
   const normalized = norm(stripNiqqud(wordPlain))
   const wordGraphemes = splitGraphemes(normalized)
+  // Niqqud graphemes for display on tiles (e.g. ['בַּ','יִ','ת'])
+  const niqqudGraphemes = wordNiqqud ? splitGraphemes(wordNiqqud) : wordGraphemes
 
   const letterCounts = {}
   wordGraphemes.forEach((l) => { letterCounts[l] = (letterCounts[l] || 0) + 1 })
@@ -33,10 +35,19 @@ export function generateLetterTiles(wordPlain, gridSize = 12) {
   const numDistractors = Math.max(0, gridSize - wordGraphemes.length)
   const distractors = unusedLetters.sort(() => Math.random() - 0.5).slice(0, numDistractors)
 
-  const all = [...wordGraphemes, ...distractors]
-  return all.sort(() => Math.random() - 0.5).map((letter, i) => ({
-    id: `${letter}-${i}-${Math.random().toString(36).slice(2)}`,
-    letter,
+  // Correct tiles: plain letter for answer-checking, niqqud grapheme for display
+  const correctTiles = wordGraphemes.map((plain, idx) => ({
+    plain,
+    display: niqqudGraphemes[idx] || plain,
+  }))
+  // Distractor tiles: plain letter, no niqqud
+  const distractorTiles = distractors.map((l) => ({ plain: l, display: l }))
+
+  const all = [...correctTiles, ...distractorTiles]
+  return all.sort(() => Math.random() - 0.5).map((tile, i) => ({
+    id: `${tile.plain}-${i}-${Math.random().toString(36).slice(2)}`,
+    letter: tile.plain,    // used for answer-checking (plain, no niqqud)
+    display: tile.display, // shown on the tile (with niqqud for correct letters)
     used: false,
   }))
 }

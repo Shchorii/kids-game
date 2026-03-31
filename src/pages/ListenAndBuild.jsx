@@ -62,7 +62,7 @@ export default function ListenAndBuild() {
 
   useEffect(() => {
     if (!currentWord) return
-    setLetters(generateLetterTiles(currentWord, 12))
+    setLetters(generateLetterTiles(currentWord, 12, currentWordDisplay))
     setPlaced([]); setHintCount(0); setShowHint(false); setStartTime(Date.now())
     speakWordFn(true)
   }, [currentWord])
@@ -225,7 +225,7 @@ export default function ListenAndBuild() {
       </motion.div>
       <div className="flex flex-wrap justify-center gap-2.5 mb-5 relative">
         {letters.map((tile, i) => (
-          <LetterTile key={tile.id} letterId={tile.id} letter={tile.letter} index={i}
+          <LetterTile key={tile.id} letterId={tile.id} letter={tile.letter} display={tile.display} index={i}
             isUsed={tile.used} isWrong={wrongId === tile.id} onClick={handleLetterClick} />
         ))}
         <AnimatePresence>

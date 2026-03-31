@@ -15,7 +15,7 @@ function colorForLetter(letter) {
   return TILE_COLORS[code % TILE_COLORS.length]
 }
 
-export default function LetterTile({ letterId, letter, index, isUsed, isWrong, onClick }) {
+export default function LetterTile({ letterId, letter, display, index, isUsed, isWrong, onClick }) {
   const color = colorForLetter(letter)
 
   return (
@@ -47,14 +47,14 @@ export default function LetterTile({ letterId, letter, index, isUsed, isWrong, o
           : `0 4px 0 ${color.border}`,
       }}
       className={`
-        relative w-14 h-14 rounded-2xl border-2 font-black text-2xl
+        relative w-14 h-14 rounded-2xl border-2 font-black text-xl
         select-none cursor-pointer transition-colors duration-150
         ${isUsed ? 'cursor-not-allowed' : 'active:translate-y-1 active:shadow-none'}
       `}
       whileHover={!isUsed ? { scale: 1.08, y: -2 } : {}}
       whileTap={!isUsed ? { scale: 0.92, y: 2 } : {}}
     >
-      {letter}
+      {display || letter}
     </motion.button>
   )
 }
