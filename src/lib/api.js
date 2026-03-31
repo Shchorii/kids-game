@@ -79,36 +79,48 @@ export async function getLeaderboard() {
 
 // ── TTS ───────────────────────────────────────────────────────────────────
 
-// ── Browser Speech API — uses Apple Carmit on Mac/iPhone, free & high quality ──
-export function speakHebrew(text, { rate = 0.85, onStart, onEnd } = {}) {
-  return new Promise((resolve, reject) => {
-    if (!('speechSynthesis' in window)) { reject(new Error('not supported')); return }
-    speechSynthesis.cancel()
+// ── Azure TTS — he-IL-HilaNeural via server, with browser fallback ──
+const _audioCache = {}
 
-    const doSpeak = () => {
-      const voices = speechSynthesis.getVoices()
-      // Priority: Carmit (Apple HQ Hebrew) → any he-IL → any Hebrew
-      const voice =
-        voices.find(v => v.name === 'Carmit') ||
-        voices.find(v => v.lang === 'he-IL' || v.lang === 'he_IL') ||
-        voices.find(v => v.lang.startsWith('he'))
-
-      const utt = new SpeechSynthesisUtterance(text)
-      utt.lang  = 'he-IL'
-      utt.rate  = rate
-      utt.pitch = 1.05
-      if (voice) utt.voice = voice
-      utt.onstart = () => onStart?.()
-      utt.onend   = () => { resolve(); onEnd?.() }
-      utt.onerror = (e) => { resolve(); onEnd?.() } // never crash
-      speechSynthesis.speak(utt)
+export async function speakHebrew(text, { onStart, onEnd } = {}) {
+  const cacheKey = `azure:${text}`
+  try {
+    onStart?.()
+    // Check cache
+    if (_audioCache[cacheKey]) {
+      const audio = new Audio(_audioCache[cacheKey])
+      audio.onended = () => onEnd?.()
+      audio.onerror = () => { _fallback(text, onEnd) }
+      return audio.play()
     }
+    // Call Azure TTS via server
+    const res = await fetch(`${BASE}/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+    if (!res.ok) throw new Error('TTS API error')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    _audioCache[cacheKey] = url
+    const audio = new Audio(url)
+    audio.onended = () => onEnd?.()
+    audio.onerror = () => { onEnd?.(); _fallback(text, onEnd) }
+    audio.play()
+  } catch {
+    _fallback(text, onEnd)
+  }
+}
 
-    if (speechSynthesis.getVoices().length > 0) {
-      doSpeak()
-    } else {
-      speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true })
-      setTimeout(doSpeak, 800) // fallback if event never fires
-    }
-  })
+function _fallback(text, onEnd) {
+  // Browser Speech API fallback if Azure fails
+  if (!('speechSynthesis' in window)) { onEnd?.(); return }
+  speechSynthesis.cancel()
+  const utt = new SpeechSynthesisUtterance(text)
+  utt.lang = 'he-IL'; utt.rate = 0.85
+  const voices = speechSynthesis.getVoices()
+  const voice = voices.find(v => v.name === 'Carmit') || voices.find(v => v.lang.startsWith('he'))
+  if (voice) utt.voice = voice
+  utt.onend = () => onEnd?.()
+  speechSynthesis.speak(utt)
 }
