@@ -79,13 +79,36 @@ export async function getLeaderboard() {
 
 // ── TTS ───────────────────────────────────────────────────────────────────
 
-export async function textToSpeech(text) {
-  const res = await fetch(`${BASE}/tts`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+// ── Browser Speech API — uses Apple Carmit on Mac/iPhone, free & high quality ──
+export function speakHebrew(text, { rate = 0.85, onStart, onEnd } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!('speechSynthesis' in window)) { reject(new Error('not supported')); return }
+    speechSynthesis.cancel()
+
+    const doSpeak = () => {
+      const voices = speechSynthesis.getVoices()
+      // Priority: Carmit (Apple HQ Hebrew) → any he-IL → any Hebrew
+      const voice =
+        voices.find(v => v.name === 'Carmit') ||
+        voices.find(v => v.lang === 'he-IL' || v.lang === 'he_IL') ||
+        voices.find(v => v.lang.startsWith('he'))
+
+      const utt = new SpeechSynthesisUtterance(text)
+      utt.lang  = 'he-IL'
+      utt.rate  = rate
+      utt.pitch = 1.05
+      if (voice) utt.voice = voice
+      utt.onstart = () => onStart?.()
+      utt.onend   = () => { resolve(); onEnd?.() }
+      utt.onerror = (e) => { resolve(); onEnd?.() } // never crash
+      speechSynthesis.speak(utt)
+    }
+
+    if (speechSynthesis.getVoices().length > 0) {
+      doSpeak()
+    } else {
+      speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true })
+      setTimeout(doSpeak, 800) // fallback if event never fires
+    }
   })
-  if (!res.ok) throw new Error('TTS failed')
-  const blob = await res.blob()
-  return URL.createObjectURL(blob)
 }

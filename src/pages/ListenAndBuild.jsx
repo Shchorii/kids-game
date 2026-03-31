@@ -11,9 +11,7 @@ import NamePrompt from '@/components/game/NamePrompt'
 import { splitGraphemes, norm, stripNiqqud, generateLetterTiles } from '@/lib/hebrew'
 import FloatingObjects, { getThemeBg } from '@/components/game/FloatingObjects'
 import Mascot from '@/components/game/Mascot'
-import { getWords, saveProgress } from '@/lib/api'
-import { getCachedAudio, setCachedAudio } from '@/lib/storage'
-import { textToSpeech } from '@/lib/api'
+import { getWords, saveProgress, speakHebrew } from '@/lib/api'
 
 const GRADES = [
   { value: 1, label: "כיתה א׳", emoji: '🌱', color: 'from-green-400 to-emerald-500', border: 'border-green-200', bg: 'bg-green-50', text: 'text-green-700' },
@@ -88,39 +86,13 @@ export default function ListenAndBuild() {
     }
   }, [placed])
 
-  const speakWordFn = useCallback(async (preloadOnly = false) => {
-    if (!currentWord) return
-    const cacheKey = `tts:${currentWord}`
-    const cached = getCachedAudio(cacheKey)
-    if (cached) {
-      if (preloadOnly) return
-      setIsPlayingAudio(true)
-      const audio = new Audio(cached)
-      audio.onended = () => setIsPlayingAudio(false)
-      audio.onerror = () => setIsPlayingAudio(false)
-      audio.play().catch(() => setIsPlayingAudio(false))
-      return
-    }
-    if (preloadOnly) {
-      textToSpeech(currentWord).then((url) => setCachedAudio(cacheKey, url)).catch(() => {})
-      return
-    }
+  const speakWordFn = useCallback((preloadOnly = false) => {
+    if (!currentWord || preloadOnly) return
     setIsPlayingAudio(true)
-    try {
-      const url = await textToSpeech(currentWord)
-      setCachedAudio(cacheKey, url)
-      const audio = new Audio(url)
-      audio.onended = () => setIsPlayingAudio(false)
-      audio.onerror = () => setIsPlayingAudio(false)
-      audio.play()
-    } catch {
-      if ('speechSynthesis' in window) {
-        const utt = new SpeechSynthesisUtterance(currentWord)
-        utt.lang = 'he-IL'; utt.rate = 0.8
-        utt.onend = () => setIsPlayingAudio(false)
-        speechSynthesis.speak(utt)
-      } else setIsPlayingAudio(false)
-    }
+    speakHebrew(currentWord, {
+      onStart: () => setIsPlayingAudio(true),
+      onEnd:   () => setIsPlayingAudio(false),
+    }).catch(() => setIsPlayingAudio(false))
   }, [currentWord])
 
   const handleLetterClick = (id, letter) => {
