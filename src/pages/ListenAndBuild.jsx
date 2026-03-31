@@ -207,7 +207,7 @@ export default function ListenAndBuild() {
       </div>
       <motion.div key={currentWord} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-4xl p-6 shadow-lg border-2 border-purple-100 mb-5 text-center">
-        <p className="text-sm font-semibold text-purple-300 mb-5">הקשיבי ובני את המילה 👂</p>
+        <p className="text-sm font-semibold text-purple-300 mb-5">הקשב ובנה את המילה 👂</p>
         <motion.button onClick={() => speakWordFn()} disabled={isPlayingAudio}
           whileHover={!isPlayingAudio ? { scale: 1.05 } : {}} whileTap={!isPlayingAudio ? { scale: 0.95 } : {}}
           className={`relative mx-auto flex items-center gap-3 font-bold text-lg px-7 py-3.5 rounded-3xl shadow-md transition-all ${
@@ -220,8 +220,8 @@ export default function ListenAndBuild() {
         <DropZone placedLetters={placed} wordLength={splitGraphemes(currentWord).length}
           onRemoveLetter={handleRemoveLetter}
           isCorrect={placed.length > 0 && placed.length === splitGraphemes(currentWord).length}
-          showHint={showHint} correctWord={currentWord} />
-        <p className="text-xs text-purple-300 font-medium">לחצי על אות כדי להסיר אותה</p>
+          showHint={showHint} correctWord={currentWord} correctWordNiqqud={currentWordDisplay} />
+        <p className="text-xs text-purple-300 font-medium">לחץ על אות כדי להסיר</p>
       </motion.div>
       <div className="flex flex-wrap justify-center gap-2.5 mb-5 relative">
         {letters.map((tile, i) => (
@@ -235,7 +235,7 @@ export default function ListenAndBuild() {
         </AnimatePresence>
       </div>
       <div className="flex gap-3 justify-center">
-        <ActionBtn onClick={() => speakWordFn()} icon={<Volume2 className="w-5 h-5" />} label="שמעי שוב" color="purple" />
+        <ActionBtn onClick={() => speakWordFn()} icon={<Volume2 className="w-5 h-5" />} label="שמע שוב" color="purple" />
         <ActionBtn onClick={handleHint} icon={<Lightbulb className="w-5 h-5" />} label="רמז" color="yellow" />
         <ActionBtn onClick={handleReset} icon={<RotateCcw className="w-5 h-5" />} label="מחדש" color="red" />
       </div>

@@ -2,9 +2,11 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { splitGraphemes, norm } from '@/lib/hebrew'
 
-export default function DropZone({ placedLetters, wordLength, onRemoveLetter, isCorrect, showHint, correctWord }) {
+export default function DropZone({ placedLetters, wordLength, onRemoveLetter, isCorrect, showHint, correctWord, correctWordNiqqud }) {
   const slots = Array.from({ length: wordLength })
   const correctGraphemes = correctWord ? splitGraphemes(norm(correctWord)) : []
+  // Niqqud graphemes for display when letter is placed (e.g. 'בַּ' instead of 'ב')
+  const niqqudGraphemes = correctWordNiqqud ? splitGraphemes(correctWordNiqqud) : []
 
   return (
     <div className="flex justify-center gap-2 flex-wrap my-6">
@@ -40,7 +42,7 @@ export default function DropZone({ placedLetters, wordLength, onRemoveLetter, is
                   transition={{ type: 'spring', stiffness: 500, damping: 22 }}
                   className="text-violet-700 cursor-pointer select-none"
                 >
-                  {letter}
+                  {niqqudGraphemes[i] || letter}
                 </motion.span>
               ) : hinted ? (
                 <motion.span

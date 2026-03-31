@@ -37,7 +37,7 @@ export default function NamePrompt({ title, emoji, onStart }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder="הקלד את שמך..."
+          placeholder="כתוב את שמך..."
           autoFocus
           className="w-full text-center text-2xl font-bold p-4 rounded-2xl border-2 border-purple-200 mb-5 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition-all text-violet-700 placeholder:text-purple-200"
         />
