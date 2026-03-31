@@ -12,6 +12,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/spelling" element={<ListenAndBuild />} />
+          <Route path="/english" element={<EnglishGame />} />
         <Route path="/math" element={<CalculateGame />} />
         <Route path="/admin" element={<AdminWords />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
