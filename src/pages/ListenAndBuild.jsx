@@ -207,11 +207,7 @@ export default function ListenAndBuild() {
       </div>
       <motion.div key={currentWord} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-4xl p-6 shadow-lg border-2 border-purple-100 mb-5 text-center">
-        <p className="text-sm font-semibold text-purple-300 mb-3">הקשיבי ובני את המילה 👂</p>
-        <motion.div key={currentWordDisplay} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          className="text-5xl font-black text-violet-700 mb-4 tracking-wider" style={{ fontFamily: 'Heebo, Arial' }}>
-          {currentWordDisplay}
-        </motion.div>
+        <p className="text-sm font-semibold text-purple-300 mb-5">הקשיבי ובני את המילה 👂</p>
         <motion.button onClick={() => speakWordFn()} disabled={isPlayingAudio}
           whileHover={!isPlayingAudio ? { scale: 1.05 } : {}} whileTap={!isPlayingAudio ? { scale: 0.95 } : {}}
           className={`relative mx-auto flex items-center gap-3 font-bold text-lg px-7 py-3.5 rounded-3xl shadow-md transition-all ${
@@ -243,7 +239,7 @@ export default function ListenAndBuild() {
         <ActionBtn onClick={handleHint} icon={<Lightbulb className="w-5 h-5" />} label="רמז" color="yellow" />
         <ActionBtn onClick={handleReset} icon={<RotateCcw className="w-5 h-5" />} label="מחדש" color="red" />
       </div>
-      <SuccessAnimation show={showSuccess} onComplete={handleNextWord} stars={earnedStars} />
+      <SuccessAnimation show={showSuccess} onComplete={handleNextWord} stars={earnedStars} revealWord={currentWordDisplay} />
     </div>
   )
 }

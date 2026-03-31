@@ -49,7 +49,7 @@ function Confetti() {
   )
 }
 
-export default function SuccessAnimation({ show, onComplete, stars = 3 }) {
+export default function SuccessAnimation({ show, onComplete, stars = 3, revealWord }) {
   const praise = useRef(randomPraise())
   const timerRef = useRef(null)
 
@@ -93,6 +93,17 @@ export default function SuccessAnimation({ show, onComplete, stars = 3 }) {
                 </motion.span>
               ))}
             </div>
+            {revealWord && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.15 }}
+                className="text-4xl font-black text-violet-600 mb-2"
+                style={{ fontFamily: 'Heebo, Arial' }}
+              >
+                {revealWord}
+              </motion.div>
+            )}
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
