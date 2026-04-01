@@ -166,19 +166,39 @@ export default function EnglishGame() {
     }
   }, [catKey, mode])
 
-  // Auto-speak on new word + reset sentence
+  // Auto-speak on new word + reset sentence + prefetch sentence
   useEffect(() => {
     if (!cur) return
     setSentence(null)
     const delay = mode === 'listen' ? 400 : 600
     const t = setTimeout(() => speak(cur.w), delay)
-    return () => clearTimeout(t)
+    // Prefetch sentence in background so it's instant when clicked
+    const prefetch = setTimeout(() => {
+      fetch('/api/sentence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: cur.w }),
+      }).then(r => r.json()).then(data => {
+        if (data.sentence) {
+          // Store in ref so fetchSentence can use it instantly
+          _prefetchedSentence.current = { word: cur.w, sentence: data.sentence }
+        }
+      }).catch(() => {})
+    }, 800) // slight delay so audio plays first
+    return () => { clearTimeout(t); clearTimeout(prefetch) }
   }, [cur?.w, mode])
 
   async function fetchSentence() {
     if (!cur || sentenceLoading) return
+    // Use prefetched sentence instantly if available
+    if (_prefetchedSentence.current?.word === cur.w && _prefetchedSentence.current?.sentence) {
+      const s = _prefetchedSentence.current.sentence
+      setSentence(s)
+      setTimeout(() => speak(s), 200)
+      return
+    }
+    // Otherwise fetch (fallback)
     setSentenceLoading(true)
-    setSentence(null)
     try {
       const r = await fetch('/api/sentence', {
         method: 'POST',
@@ -188,8 +208,7 @@ export default function EnglishGame() {
       const data = await r.json()
       if (data.sentence) {
         setSentence(data.sentence)
-        // Speak it aloud after a short pause
-        setTimeout(() => speak(data.sentence), 400)
+        setTimeout(() => speak(data.sentence), 200)
       }
     } catch { setSentence('I love the ' + cur.w + '!') }
     setSentenceLoading(false)
@@ -413,10 +432,6 @@ export default function EnglishGame() {
               </>
             )}
             <div className="mt-3 flex flex-col items-center gap-2 w-full">
-              <button onClick={() => cur && speak(cur.w)}
-                className={`mx-auto flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border-2 ${cat.border} ${cat.text} font-bold text-sm shadow-sm`}>
-                <Volume2 className="w-4 h-4" /> {mode === 'listen' ? 'שמע שוב' : 'Listen'}
-              </button>
               <button onClick={fetchSentence} disabled={sentenceLoading}
                 className={`mx-auto flex items-center gap-2 px-4 py-2 rounded-2xl font-bold text-sm shadow-sm transition-all ${
                   sentenceLoading
