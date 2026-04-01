@@ -162,7 +162,7 @@ export default function EnglishGame() {
     if (catKey && mode && pool.length >= 4) {
       setQueue(shuffle(pool).slice(0, Math.min(10, pool.length)))
       setIdx(0); setStars(0); setMistakes([])
-      setChosen(null); setResult(null); setDone(false); setPhase('main')
+      setChosen(null); setResult(null); setDone(false); setPhase('main'); setCelebrating(false); setWrongChosen(null)
     }
   }, [catKey, mode])
 
@@ -376,7 +376,7 @@ export default function EnglishGame() {
   }
 
   // ── Game screen ──────────────────────────────────────────────────────────────
-  const progress = (idx / queue.length) * 100
+  const progress = queue.length > 0 ? (idx / queue.length) * 100 : 0
 
   return (
     <div className={`min-h-screen flex flex-col p-3 sm:p-5 max-w-lg mx-auto bg-gradient-to-br ${cat.bg}`}>
