@@ -121,3 +121,9 @@ body {
   50%       { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(249,115,22,0.2); }
 }
 .fire-pulse { animation: fire-pulse 1s ease-in-out infinite; }
+
+/* Remove 300ms tap delay on all buttons/links for mobile */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

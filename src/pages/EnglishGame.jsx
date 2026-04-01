@@ -166,26 +166,36 @@ export default function EnglishGame() {
     }
   }, [catKey, mode])
 
-  // Auto-speak on new word + reset sentence + prefetch sentence
+  // On new word: reset sentence, prefetch audio + sentence in background
   useEffect(() => {
     if (!cur) return
     setSentence(null)
-    const delay = mode === 'listen' ? 400 : 600
-    const t = setTimeout(() => speak(cur.w), delay)
-    // Prefetch sentence in background so it's instant when clicked
-    const prefetch = setTimeout(() => {
+    // Pre-fetch audio silently so Listen button is instant (no auto-play — iOS blocks it)
+    const audioFetch = setTimeout(() => {
+      const key = 'en:' + cur.w
+      if (!_cache[key]) {
+        fetch('/api/tts-en', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: cur.w }),
+        }).then(r => r.blob()).then(blob => {
+          _cache[key] = URL.createObjectURL(blob)
+        }).catch(() => {})
+      }
+    }, 200)
+    // Pre-fetch sentence
+    const sentFetch = setTimeout(() => {
       fetch('/api/sentence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ word: cur.w }),
       }).then(r => r.json()).then(data => {
         if (data.sentence) {
-          // Store in ref so fetchSentence can use it instantly
           _prefetchedSentence.current = { word: cur.w, sentence: data.sentence }
         }
       }).catch(() => {})
-    }, 800) // slight delay so audio plays first
-    return () => { clearTimeout(t); clearTimeout(prefetch) }
+    }, 500)
+    return () => { clearTimeout(audioFetch); clearTimeout(sentFetch) }
   }, [cur?.w, mode])
 
   async function fetchSentence() {
@@ -469,6 +479,7 @@ export default function EnglishGame() {
                   <motion.button key={item.w}
                     onClick={() => pick(item)}
                     disabled={result === 'ok' || wrongChosen === item.w}
+                    style={{ touchAction: 'manipulation' }}
                     whileHover={result !== 'ok' && wrongChosen !== item.w ? { scale:1.04, y:-3 } : {}}
                     whileTap={result !== 'ok' && wrongChosen !== item.w ? { scale:0.95 } : {}}
                     animate={wrongChosen === item.w ? { x:[-6,6,-6,6,0] } : win ? { scale:[1,1.1,1] } : {}}
@@ -494,6 +505,7 @@ export default function EnglishGame() {
                   <motion.button key={item.w}
                     onClick={() => pick(item)}
                     disabled={result === 'ok' || wrongChosen === item.w}
+                    style={{ touchAction: 'manipulation' }}
                     whileHover={result !== 'ok' && wrongChosen !== item.w ? { scale:1.04, y:-3 } : {}}
                     whileTap={result !== 'ok' && wrongChosen !== item.w ? { scale:0.95 } : {}}
                     animate={wrongChosen === item.w ? { x:[-6,6,-6,6,0] } : win ? { scale:[1,1.1,1] } : {}}
@@ -570,6 +582,7 @@ export default function EnglishGame() {
                 onClick={handleNext}
                 initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.5 }}
                 whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
+                style={{ touchAction: 'manipulation' }}
                 className={`w-full py-4 rounded-2xl bg-gradient-to-br ${cat.color} text-white font-black text-xl shadow-lg`}
               >
                 Next →
