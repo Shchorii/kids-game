@@ -1,277 +1,417 @@
 // src/pages/EnglishGame.jsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Volume2, Home } from 'lucide-react'
+import { Volume2, Home, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import NamePrompt from '@/components/game/NamePrompt'
 
-const VOCAB = [
-  { word:'cat',   emoji:'🐱', he:'חתול',   level:1 },
-  { word:'dog',   emoji:'🐶', he:'כלב',    level:1 },
-  { word:'bird',  emoji:'🐦', he:'ציפור',  level:1 },
-  { word:'fish',  emoji:'🐟', he:'דג',     level:1 },
-  { word:'cow',   emoji:'🐄', he:'פרה',    level:1 },
-  { word:'horse', emoji:'🐴', he:'סוס',    level:1 },
-  { word:'frog',  emoji:'🐸', he:'צפרדע', level:1 },
-  { word:'lion',  emoji:'🦁', he:'אריה',   level:1 },
-  { word:'bear',  emoji:'🐻', he:'דוב',    level:1 },
-  { word:'duck',  emoji:'🦆', he:'ברווז',  level:1 },
-  { word:'sun',   emoji:'☀️', he:'שמש',   level:1 },
-  { word:'moon',  emoji:'🌙', he:'ירח',    level:1 },
-  { word:'star',  emoji:'⭐', he:'כוכב',   level:1 },
-  { word:'tree',  emoji:'🌳', he:'עץ',     level:1 },
-  { word:'house', emoji:'🏠', he:'בית',    level:1 },
-  { word:'car',   emoji:'🚗', he:'מכונית', level:1 },
-  { word:'book',  emoji:'📚', he:'ספר',    level:1 },
-  { word:'ball',  emoji:'⚽', he:'כדור',   level:1 },
-  { word:'apple',  emoji:'🍎', he:'תפוח',  level:2 },
-  { word:'banana', emoji:'🍌', he:'בננה',  level:2 },
-  { word:'orange', emoji:'🍊', he:'תפוז',  level:2 },
-  { word:'bread',  emoji:'🍞', he:'לחם',   level:2 },
-  { word:'milk',   emoji:'🥛', he:'חלב',   level:2 },
-  { word:'egg',    emoji:'🥚', he:'ביצה',  level:2 },
-  { word:'cake',   emoji:'🎂', he:'עוגה',  level:2 },
-  { word:'pizza',  emoji:'🍕', he:'פיצה',  level:2 },
-  { word:'eye',    emoji:'👁️', he:'עין',  level:2 },
-  { word:'ear',    emoji:'👂', he:'אוזן',  level:2 },
-  { word:'hand',   emoji:'✋', he:'יד',    level:2 },
-  { word:'foot',   emoji:'🦶', he:'רגל',   level:2 },
-  { word:'red',    emoji:'🔴', he:'אדום',  level:2 },
-  { word:'blue',   emoji:'🔵', he:'כחול',  level:2 },
-  { word:'green',  emoji:'🟢', he:'ירוק',  level:2 },
-  { word:'yellow', emoji:'🟡', he:'צהוב',  level:2 },
-  { word:'run',   emoji:'🏃', he:'רץ',    level:3 },
-  { word:'jump',  emoji:'🦘', he:'קופץ',  level:3 },
-  { word:'swim',  emoji:'🏊', he:'שוחה',  level:3 },
-  { word:'sleep', emoji:'😴', he:'ישן',   level:3 },
-  { word:'laugh', emoji:'😂', he:'צוחק',  level:3 },
-  { word:'dance', emoji:'💃', he:'רוקד',  level:3 },
-  { word:'sing',  emoji:'🎤', he:'שר',    level:3 },
-  { word:'read',  emoji:'📖', he:'קורא',  level:3 },
-  { word:'big',   emoji:'🐘', he:'גדול',  level:3 },
-  { word:'small', emoji:'🐭', he:'קטן',   level:3 },
-  { word:'hot',   emoji:'🔥', he:'חם',    level:3 },
-  { word:'cold',  emoji:'🧊', he:'קר',    level:3 },
-  { word:'happy', emoji:'😊', he:'שמח',   level:3 },
-  { word:'rain',  emoji:'🌧️', he:'גשם',  level:3 },
-]
+// ─── Vocabulary bank — 6 thematic categories ────────────────────────────────
+const CATEGORIES = {
+  animals: {
+    label: 'חיות', emoji: '🐾', color: 'from-green-400 to-emerald-500',
+    bg: 'from-green-50 to-emerald-50', border: 'border-green-200', text: 'text-green-700',
+    words: [
+      {w:'cat',e:'🐱',he:'חתול'},{w:'dog',e:'🐶',he:'כלב'},{w:'fish',e:'🐟',he:'דג'},
+      {w:'bird',e:'🐦',he:'ציפור'},{w:'cow',e:'🐄',he:'פרה'},{w:'pig',e:'🐷',he:'חזיר'},
+      {w:'frog',e:'🐸',he:'צפרדע'},{w:'duck',e:'🦆',he:'ברווז'},{w:'bear',e:'🐻',he:'דוב'},
+      {w:'lion',e:'🦁',he:'אריה'},{w:'elephant',e:'🐘',he:'פיל'},{w:'monkey',e:'🐒',he:'קוף'},
+      {w:'horse',e:'🐴',he:'סוס'},{w:'sheep',e:'🐑',he:'כבש'},{w:'rabbit',e:'🐰',he:'ארנב'},
+      {w:'fox',e:'🦊',he:'שועל'},{w:'owl',e:'🦉',he:'ינשוף'},{w:'snake',e:'🐍',he:'נחש'},
+      {w:'turtle',e:'🐢',he:'צב'},{w:'penguin',e:'🐧',he:'פינגווין'},
+    ]
+  },
+  food: {
+    label: 'אוכל', emoji: '🍎', color: 'from-red-400 to-orange-500',
+    bg: 'from-red-50 to-orange-50', border: 'border-red-200', text: 'text-red-700',
+    words: [
+      {w:'apple',e:'🍎',he:'תפוח'},{w:'banana',e:'🍌',he:'בננה'},{w:'orange',e:'🍊',he:'תפוז'},
+      {w:'grape',e:'🍇',he:'ענב'},{w:'strawberry',e:'🍓',he:'תות'},{w:'watermelon',e:'🍉',he:'אבטיח'},
+      {w:'cake',e:'🎂',he:'עוגה'},{w:'cookie',e:'🍪',he:'עוגייה'},{w:'pizza',e:'🍕',he:'פיצה'},
+      {w:'bread',e:'🍞',he:'לחם'},{w:'milk',e:'🥛',he:'חלב'},{w:'egg',e:'🥚',he:'ביצה'},
+      {w:'cheese',e:'🧀',he:'גבינה'},{w:'ice cream',e:'🍦',he:'גלידה'},{w:'chocolate',e:'🍫',he:'שוקולד'},
+      {w:'carrot',e:'🥕',he:'גזר'},{w:'corn',e:'🌽',he:'תירס'},{w:'tomato',e:'🍅',he:'עגבניה'},
+    ]
+  },
+  home: {
+    label: 'בית', emoji: '🏠', color: 'from-yellow-400 to-amber-500',
+    bg: 'from-yellow-50 to-amber-50', border: 'border-yellow-200', text: 'text-yellow-700',
+    words: [
+      {w:'bed',e:'🛏️',he:'מיטה'},{w:'chair',e:'🪑',he:'כיסא'},{w:'table',e:'🪵',he:'שולחן'},
+      {w:'door',e:'🚪',he:'דלת'},{w:'window',e:'🪟',he:'חלון'},{w:'bath',e:'🛁',he:'אמבטיה'},
+      {w:'cup',e:'☕',he:'כוס'},{w:'book',e:'📚',he:'ספר'},{w:'ball',e:'⚽',he:'כדור'},
+      {w:'clock',e:'🕐',he:'שעון'},{w:'phone',e:'📱',he:'טלפון'},{w:'tv',e:'📺',he:'טלוויזיה'},
+      {w:'key',e:'🔑',he:'מפתח'},{w:'lamp',e:'💡',he:'מנורה'},{w:'mirror',e:'🪞',he:'מראה'},
+      {w:'bag',e:'👜',he:'תיק'},{w:'pencil',e:'✏️',he:'עיפרון'},{w:'scissors',e:'✂️',he:'מספריים'},
+    ]
+  },
+  nature: {
+    label: 'טבע', emoji: '🌍', color: 'from-blue-400 to-cyan-500',
+    bg: 'from-blue-50 to-cyan-50', border: 'border-blue-200', text: 'text-blue-700',
+    words: [
+      {w:'sun',e:'☀️',he:'שמש'},{w:'moon',e:'🌙',he:'ירח'},{w:'star',e:'⭐',he:'כוכב'},
+      {w:'cloud',e:'☁️',he:'ענן'},{w:'rain',e:'🌧️',he:'גשם'},{w:'snow',e:'❄️',he:'שלג'},
+      {w:'tree',e:'🌳',he:'עץ'},{w:'flower',e:'🌸',he:'פרח'},{w:'rainbow',e:'🌈',he:'קשת'},
+      {w:'sea',e:'🌊',he:'ים'},{w:'mountain',e:'⛰️',he:'הר'},{w:'fire',e:'🔥',he:'אש'},
+      {w:'water',e:'💧',he:'מים'},{w:'leaf',e:'🍃',he:'עלה'},{w:'earth',e:'🌍',he:'כדור הארץ'},
+      {w:'river',e:'🏞️',he:'נהר'},{w:'rock',e:'🪨',he:'סלע'},{w:'wind',e:'🌬️',he:'רוח'},
+    ]
+  },
+  colors: {
+    label: 'צבעים', emoji: '🎨', color: 'from-purple-400 to-pink-500',
+    bg: 'from-purple-50 to-pink-50', border: 'border-purple-200', text: 'text-purple-700',
+    words: [
+      {w:'red',e:'🔴',he:'אדום'},{w:'blue',e:'🔵',he:'כחול'},{w:'green',e:'🟢',he:'ירוק'},
+      {w:'yellow',e:'🟡',he:'צהוב'},{w:'orange',e:'🟠',he:'כתום'},{w:'purple',e:'🟣',he:'סגול'},
+      {w:'black',e:'⚫',he:'שחור'},{w:'white',e:'⚪',he:'לבן'},{w:'pink',e:'🩷',he:'ורוד'},
+      {w:'brown',e:'🟤',he:'חום'},
+    ]
+  },
+  body: {
+    label: 'גוף', emoji: '👤', color: 'from-rose-400 to-red-500',
+    bg: 'from-rose-50 to-red-50', border: 'border-rose-200', text: 'text-rose-700',
+    words: [
+      {w:'eye',e:'👁️',he:'עין'},{w:'ear',e:'👂',he:'אוזן'},{w:'nose',e:'👃',he:'אף'},
+      {w:'mouth',e:'👄',he:'פה'},{w:'hand',e:'✋',he:'יד'},{w:'foot',e:'🦶',he:'רגל'},
+      {w:'heart',e:'❤️',he:'לב'},{w:'hair',e:'💇',he:'שיער'},{w:'teeth',e:'🦷',he:'שיניים'},
+      {w:'arm',e:'💪',he:'זרוע'},{w:'leg',e:'🦵',he:'רגל'},{w:'finger',e:'☝️',he:'אצבע'},
+      {w:'back',e:'🔙',he:'גב'},{w:'face',e:'😊',he:'פנים'},
+    ]
+  },
+}
 
-const LEVELS = [
-  { v:1, l:'קל',     e:'🟢', d:'חיות וחפצים'   },
-  { v:2, l:'בינוני', e:'🟡', d:'אוכל וצבעים'   },
-  { v:3, l:'קשה',    e:'🔴', d:'פעלים ותיאורים' },
-]
 const MODES = [
-  { v:'img2word', l:'תמונה → מילה', e:'🖼️➡️🔤' },
-  { v:'word2img', l:'מילה → תמונה', e:'🔤➡️🖼️' },
+  { v:'img2word', label:'ראה תמונה → בחר מילה', emoji:'🖼️➡️🔤', desc:'בחר את המילה הנכונה' },
+  { v:'listen',   label:'שמע → בחר תמונה',       emoji:'🔊➡️🖼️', desc:'הקשב ובחר את התמונה' },
+  { v:'translate',label:'עברית → אנגלית',         emoji:'🇮🇱➡️🇬🇧', desc:'תרגם לאנגלית' },
 ]
 
 function shuffle(a) { return [...a].sort(() => Math.random() - 0.5) }
 
 function getChoices(correct, pool) {
-  const others = shuffle(pool.filter(x => x.word !== correct.word)).slice(0, 3)
+  const others = shuffle(pool.filter(x => x.w !== correct.w)).slice(0, 3)
   return shuffle([correct, ...others])
 }
 
-function speak(word) {
+function speak(word, lang = 'en-US') {
   if (!window.speechSynthesis) return
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(word)
-  u.lang = 'en-US'; u.rate = 0.85
+  u.lang = lang; u.rate = 0.82; u.pitch = 1.1
   const voices = window.speechSynthesis.getVoices()
-  const voice = voices.find(v => v.name === 'Samantha') || voices.find(v => v.lang === 'en-US')
+  const voice = lang === 'en-US'
+    ? (voices.find(v => v.name === 'Samantha') || voices.find(v => v.lang === 'en-US'))
+    : (voices.find(v => v.name === 'Carmit') || voices.find(v => v.lang.startsWith('he')))
   if (voice) u.voice = voice
   window.speechSynthesis.speak(u)
 }
 
+// ─── Main Component ──────────────────────────────────────────────────────────
 export default function EnglishGame() {
   const nav = useNavigate()
-  const [name, setName]     = useState(null)
-  const [level, setLevel]   = useState(null)
-  const [mode, setMode]     = useState(null)
-  const [queue, setQueue]   = useState([])
-  const [idx, setIdx]       = useState(0)
-  const [stars, setStars]   = useState(0)
-  const [ok, setOk]         = useState(0)
-  const [bad, setBad]       = useState(0)
-  const [chosen, setChosen] = useState(null)
-  const [result, setResult] = useState(null)
-  const [done, setDone]     = useState(false)
+  const [name, setName]         = useState(null)
+  const [catKey, setCatKey]     = useState(null)  // selected category
+  const [mode, setMode]         = useState(null)
+  const [queue, setQueue]       = useState([])
+  const [idx, setIdx]           = useState(0)
+  const [stars, setStars]       = useState(0)
+  const [mistakes, setMistakes] = useState([])  // for spaced repetition
+  const [chosen, setChosen]     = useState(null)
+  const [result, setResult]     = useState(null)
+  const [done, setDone]         = useState(false)
+  const [phase, setPhase]       = useState('main') // 'main' | 'review'
+  const nextTimer = useRef(null)
 
-  const pool = VOCAB.filter(x => x.level === level)
+  const cat  = catKey ? CATEGORIES[catKey] : null
+  const pool = cat ? cat.words : []
   const cur  = queue[idx] || null
-  const opts = cur ? getChoices(cur, pool) : []
+  const opts = cur ? getChoices(cur, pool.length >= 4 ? pool : Object.values(CATEGORIES).flatMap(c => c.words)) : []
 
+  // Build queue when category + mode selected
   useEffect(() => {
-    if (level && mode && pool.length >= 4) {
-      setQueue(shuffle(pool).slice(0, 10))
-      setIdx(0); setStars(0); setOk(0); setBad(0)
-      setChosen(null); setResult(null); setDone(false)
+    if (catKey && mode && pool.length >= 4) {
+      setQueue(shuffle(pool).slice(0, Math.min(10, pool.length)))
+      setIdx(0); setStars(0); setMistakes([])
+      setChosen(null); setResult(null); setDone(false); setPhase('main')
     }
-  }, [level, mode])
+  }, [catKey, mode])
 
+  // Auto-speak on new word
   useEffect(() => {
-    if (cur) setTimeout(() => speak(cur.word), 400)
-  }, [cur?.word])
+    if (!cur) return
+    const delay = mode === 'listen' ? 400 : 600
+    const t = setTimeout(() => speak(cur.w), delay)
+    return () => clearTimeout(t)
+  }, [cur?.w, mode])
+
+  function next() {
+    const nextIdx = idx + 1
+    if (nextIdx >= queue.length) {
+      if (phase === 'main' && mistakes.length > 0) {
+        // Spaced repetition: review mistakes
+        setQueue(shuffle(mistakes))
+        setIdx(0); setChosen(null); setResult(null); setPhase('review')
+      } else {
+        setDone(true)
+      }
+    } else {
+      setIdx(nextIdx); setChosen(null); setResult(null)
+    }
+  }
 
   function pick(item) {
     if (chosen || !cur) return
-    setChosen(item.word)
-    const win = item.word === cur.word
+    setChosen(item.w)
+    const win = item.w === cur.w
     setResult(win ? 'ok' : 'bad')
-    if (win) { setStars(s => s + 1); setOk(o => o + 1) } else setBad(b => b + 1)
-    speak(cur.word)
-    setTimeout(() => {
-      if (idx + 1 >= queue.length) setDone(true)
-      else { setIdx(i => i + 1); setChosen(null); setResult(null) }
-    }, win ? 1200 : 1800)
+    if (win) {
+      setStars(s => s + 1)
+      playWin()
+    } else {
+      setMistakes(m => m.find(x => x.w === cur.w) ? m : [...m, cur])
+      playErr()
+    }
+    speak(cur.w)
+    clearTimeout(nextTimer.current)
+    nextTimer.current = setTimeout(next, win ? 1000 : 1800)
   }
 
   if (!name) return <NamePrompt title="English Time! 🇬🇧" emoji="🔤" onStart={setName} />
 
-  if (!level) return (
-    <Screen title={'Hello ' + name + '! 👋'} sub="Choose level" back={() => nav('/')}>
-      {LEVELS.map((lv, i) => (
-        <Row key={lv.v} i={i} onClick={() => setLevel(lv.v)}>
-          <span className="text-2xl">{lv.e}</span>
-          <div className="text-right">
-            <div className="font-black text-gray-800">{lv.l}</div>
-            <div className="text-sm text-gray-400">{lv.d}</div>
-          </div>
-        </Row>
-      ))}
-    </Screen>
-  )
-
-  if (!mode) return (
-    <Screen title="Game Mode" sub="" back={() => setLevel(null)}>
-      {MODES.map((m, i) => (
-        <Row key={m.v} i={i} onClick={() => setMode(m.v)}>
-          <span className="text-3xl">{m.e}</span>
-          <span className="font-black text-gray-800 text-lg">{m.l}</span>
-        </Row>
-      ))}
-    </Screen>
-  )
-
-  if (done) return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50">
-      <motion.div initial={{ scale:0.8, opacity:0 }} animate={{ scale:1, opacity:1 }}
-        className="bg-white rounded-4xl p-8 shadow-xl text-center max-w-sm w-full border-2 border-blue-100">
-        <div className="text-6xl mb-3">🎉</div>
-        <h2 className="text-3xl font-black text-blue-700 mb-1">Well Done!</h2>
-        <div className="flex justify-center gap-6 my-5">
-          <div><div className="text-3xl font-black text-green-500">{ok}</div><div className="text-sm text-gray-400">נכון ✅</div></div>
-          <div><div className="text-3xl font-black text-yellow-500">{stars}⭐</div><div className="text-sm text-gray-400">כוכבים</div></div>
-          <div><div className="text-3xl font-black text-red-400">{bad}</div><div className="text-sm text-gray-400">שגוי ❌</div></div>
-        </div>
-        <div className="flex flex-col gap-3">
-          <button onClick={() => {
-            setQueue(shuffle(pool).slice(0,10)); setIdx(0); setStars(0)
-            setOk(0); setBad(0); setChosen(null); setResult(null); setDone(false)
-          }} className="py-3 rounded-2xl bg-blue-600 text-white font-black text-lg">שחק שוב 🔄</button>
-          <button onClick={() => nav('/')} className="py-3 rounded-2xl border-2 border-blue-100 text-gray-500 font-semibold">חזרה 🏠</button>
-        </div>
-      </motion.div>
-    </div>
-  )
-
-  return (
-    <div className="min-h-screen p-4 max-w-md mx-auto bg-gradient-to-br from-sky-50 to-indigo-50">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        {['🇬🇧','⭐','🔤','✏️','📚'].map((e, i) => (
-          <motion.div key={i} className="absolute text-3xl opacity-20"
-            style={{ left: (10 + i * 18) + '%', top: (5 + (i % 3) * 25) + '%' }}
-            animate={{ y: [0,-15,10,0] }} transition={{ duration: 8+i*2, repeat:Infinity, delay:-i*2 }}>
-            {e}
-          </motion.div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between mb-4 pt-2">
+  // ── Category picker ─────────────────────────────────────────────────────────
+  if (!catKey) return (
+    <div className="min-h-screen p-4 max-w-lg mx-auto bg-gradient-to-br from-sky-50 to-indigo-50">
+      <div className="flex items-center justify-between pt-4 mb-6">
         <button onClick={() => nav('/')} className="w-10 h-10 rounded-2xl bg-white border-2 border-blue-100 flex items-center justify-center shadow-sm">
           <Home className="w-5 h-5 text-blue-500" />
         </button>
-        <div className="flex gap-2">
-          <span className="text-sm font-bold text-blue-500 bg-white px-3 py-1 rounded-full border-2 border-blue-100">{idx+1}/{queue.length}</span>
-          <span className="text-sm font-bold text-yellow-600 bg-white px-3 py-1 rounded-full border-2 border-yellow-100">⭐{stars}</span>
-        </div>
+        <h1 className="text-2xl font-black text-blue-700">Hello {name}! 👋</h1>
+        <div className="w-10" />
       </div>
-      <div className="h-2 bg-blue-100 rounded-full mb-5 overflow-hidden">
-        <motion.div className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full"
-          animate={{ width: (idx / queue.length * 100) + '%' }} transition={{ duration: 0.4 }} />
+      <p className="text-center text-gray-400 font-medium mb-5">בחר קטגוריה</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {Object.entries(CATEGORIES).map(([key, c], i) => (
+          <motion.button key={key} onClick={() => setCatKey(key)}
+            initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: i*0.07 }}
+            whileHover={{ scale:1.04, y:-3 }} whileTap={{ scale:0.96 }}
+            className={`flex flex-col items-center gap-2 bg-white rounded-3xl p-5 shadow-md border-2 ${c.border} hover:shadow-lg transition-all`}>
+            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${c.color} flex items-center justify-center text-3xl shadow-md`}>
+              {c.emoji}
+            </div>
+            <span className={`font-black text-sm ${c.text}`}>{c.label}</span>
+            <span className="text-xs text-gray-400">{c.words.length} מילים</span>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  )
+
+  // ── Mode picker ──────────────────────────────────────────────────────────────
+  if (!mode) return (
+    <div className={`min-h-screen p-4 max-w-md mx-auto bg-gradient-to-br ${cat.bg}`}>
+      <div className="flex items-center justify-between pt-4 mb-6">
+        <button onClick={() => setCatKey(null)} className="w-10 h-10 rounded-2xl bg-white border-2 border-blue-100 flex items-center justify-center shadow-sm">
+          <Home className="w-5 h-5 text-blue-500" />
+        </button>
+        <h1 className="text-xl font-black text-gray-700">{cat.emoji} {cat.label}</h1>
+        <div className="w-10" />
+      </div>
+      <p className="text-center text-gray-400 font-medium mb-5">בחר מצב משחק</p>
+      <div className="flex flex-col gap-3">
+        {MODES.map((m, i) => (
+          <motion.button key={m.v} onClick={() => setMode(m.v)}
+            initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: i*0.1 }}
+            whileHover={{ scale:1.02, y:-2 }} whileTap={{ scale:0.98 }}
+            className={`w-full flex items-center gap-4 bg-white rounded-3xl p-5 shadow-md border-2 ${cat.border} hover:shadow-lg transition-all`}>
+            <span className="text-3xl">{m.emoji}</span>
+            <div className="text-right">
+              <div className={`font-black text-lg ${cat.text}`}>{m.label}</div>
+              <div className="text-sm text-gray-400">{m.desc}</div>
+            </div>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  )
+
+  // ── Summary screen ───────────────────────────────────────────────────────────
+  if (done) {
+    const total = stars
+    const pct = Math.round((total / queue.length) * 100)
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-blue-50">
+        <motion.div initial={{ scale:0.7, opacity:0 }} animate={{ scale:1, opacity:1 }}
+          transition={{ type:'spring', stiffness:300, damping:20 }}
+          className="bg-white rounded-4xl p-8 shadow-xl text-center max-w-sm w-full border-2 border-blue-100">
+          <motion.div animate={{ rotate:[0,15,-15,10,-10,0] }} transition={{ delay:0.3, duration:0.8 }}
+            className="text-7xl mb-3">
+            {pct >= 80 ? '🏆' : pct >= 50 ? '⭐' : '💪'}
+          </motion.div>
+          <h2 className="text-3xl font-black text-blue-700 mb-1">
+            {pct >= 80 ? 'Amazing!' : pct >= 50 ? 'Well Done!' : 'Keep Trying!'}
+          </h2>
+          <p className="text-gray-400 mb-5">{pct}% נכון</p>
+          <div className="flex justify-center gap-5 mb-6">
+            <div><div className="text-3xl font-black text-green-500">{stars}</div><div className="text-xs text-gray-400">נכון ✅</div></div>
+            <div><div className="text-3xl font-black text-orange-400">{mistakes.length}</div><div className="text-xs text-gray-400">שגוי ❌</div></div>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => { setCatKey(catKey); setMode(null) }}
+              className={`py-3.5 rounded-2xl bg-gradient-to-br ${cat.color} text-white font-black text-lg shadow-md`}>
+              שחק שוב 🔄
+            </button>
+            <button onClick={() => { setCatKey(null); setMode(null) }}
+              className="py-3.5 rounded-2xl border-2 border-blue-100 text-gray-500 font-semibold">
+              קטגוריה אחרת 📂
+            </button>
+            <button onClick={() => nav('/')}
+              className="py-2 text-gray-400 text-sm font-medium">
+              חזרה הביתה 🏠
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    )
+  }
+
+  // ── Game screen ──────────────────────────────────────────────────────────────
+  const progress = (idx / queue.length) * 100
+
+  return (
+    <div className={`min-h-screen flex flex-col p-3 sm:p-5 max-w-lg mx-auto bg-gradient-to-br ${cat.bg}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={() => { setCatKey(null); setMode(null) }}
+          className="w-10 h-10 rounded-2xl bg-white border-2 border-blue-100 flex items-center justify-center shadow-sm flex-shrink-0">
+          <Home className="w-5 h-5 text-blue-500" />
+        </button>
+        <div className="flex items-center gap-2">
+          {phase === 'review' && (
+            <span className="text-xs font-black bg-orange-100 text-orange-600 border border-orange-200 px-2 py-1 rounded-full">
+              🔁 חזרה
+            </span>
+          )}
+          <span className={`text-sm font-black bg-white px-3 py-1 rounded-full border-2 ${cat.border} ${cat.text}`}>
+            {idx + 1}/{queue.length}
+          </span>
+          <span className="text-sm font-black bg-white px-3 py-1 rounded-full border-2 border-yellow-200 text-yellow-600">
+            ⭐{stars}
+          </span>
+        </div>
+        <button onClick={() => { setIdx(0); setChosen(null); setResult(null); setQueue(shuffle(pool).slice(0,Math.min(10,pool.length))); setStars(0); setMistakes([]); setPhase('main') }}
+          className="w-10 h-10 rounded-2xl bg-white border-2 border-blue-100 flex items-center justify-center shadow-sm flex-shrink-0">
+          <RotateCcw className="w-4 h-4 text-gray-400" />
+        </button>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-2.5 bg-white/60 rounded-full mb-4 overflow-hidden">
+        <motion.div className={`h-full bg-gradient-to-r ${cat.color} rounded-full`}
+          animate={{ width: progress + '%' }} transition={{ duration: 0.4 }} />
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div key={cur?.word + mode} initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-30 }} className="flex flex-col gap-4">
-          <div className="bg-white rounded-4xl p-6 shadow-lg border-2 border-blue-100 text-center">
-            {mode === 'img2word' ? (
+        <motion.div key={cur?.w + mode}
+          initial={{ opacity:0, x:40 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-40 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-col gap-4 flex-1">
+
+          {/* Word card */}
+          <div className="bg-white rounded-4xl shadow-lg border-2 border-white/80 p-5 text-center">
+            {mode === 'img2word' && (
               <>
-                <p className="text-sm font-semibold text-blue-300 mb-2">מה זה באנגלית? 🤔</p>
-                <div className="text-9xl mb-3 select-none">{cur?.emoji}</div>
-                <p className="text-sm text-gray-300">{cur?.he}</p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-blue-300 mb-2">בחר את התמונה הנכונה 👇</p>
-                <div className="text-5xl font-black text-blue-700 mb-2 tracking-widest">{cur?.word}</div>
-                <p className="text-sm text-gray-300">{cur?.he}</p>
+                <p className={`text-sm font-bold mb-2 ${cat.text}`}>מה זה באנגלית? 🤔</p>
+                <div className="text-8xl sm:text-9xl my-2 select-none leading-none">{cur?.e}</div>
+                <p className="text-sm text-gray-300 mt-1">{cur?.he}</p>
               </>
             )}
-            <button onClick={() => cur && speak(cur.word)}
-              className="mt-3 mx-auto flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-600 font-bold text-sm">
-              <Volume2 className="w-4 h-4" /> Listen
+            {mode === 'listen' && (
+              <>
+                <p className={`text-sm font-bold mb-3 ${cat.text}`}>האזן ובחר תמונה 👂</p>
+                <motion.button onClick={() => speak(cur?.w)}
+                  whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
+                  className={`mx-auto flex items-center gap-3 px-8 py-5 rounded-3xl bg-gradient-to-br ${cat.color} text-white font-black text-xl shadow-lg`}>
+                  <Volume2 className="w-7 h-7" /> Listen!
+                </motion.button>
+                <p className="text-xs text-gray-300 mt-3">לחץ שוב לשמיעה חוזרת</p>
+              </>
+            )}
+            {mode === 'translate' && (
+              <>
+                <p className={`text-sm font-bold mb-2 ${cat.text}`}>מה זה באנגלית? 🇬🇧</p>
+                <div className="text-4xl sm:text-5xl font-black text-gray-800 my-3 tracking-wide">{cur?.he}</div>
+                <p className="text-xs text-gray-300">בחר את התרגום הנכון</p>
+              </>
+            )}
+            <button onClick={() => cur && speak(cur.w)}
+              className={`mt-3 mx-auto flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border-2 ${cat.border} ${cat.text} font-bold text-sm shadow-sm`}>
+              <Volume2 className="w-4 h-4" /> {mode === 'listen' ? 'שמע שוב' : 'Listen'}
             </button>
           </div>
 
-          {mode === 'img2word' ? (
+          {/* Choices */}
+          {mode === 'img2word' || mode === 'translate' ? (
+            // Word choice buttons
             <div className="grid grid-cols-2 gap-3">
               {opts.map(item => {
-                const isc  = chosen === item.word
-                const win  = !!result && item.word === cur?.word
-                const lose = !!result && isc && item.word !== cur?.word
+                const isc = chosen === item.w
+                const win = !!result && item.w === cur?.w
+                const lose = !!result && isc && item.w !== cur?.w
                 return (
-                  <motion.button key={item.word} onClick={() => pick(item)}
-                    whileHover={!chosen ? { scale:1.04, y:-2 } : {}}
-                    whileTap={!chosen ? { scale:0.96 } : {}}
-                    animate={lose ? { x:[-4,4,-4,0] } : {}}
-                    className={'py-4 px-3 rounded-3xl border-2 font-black text-xl shadow-md transition-all ' +
-                      (win ? 'bg-green-100 border-green-400 text-green-700' :
-                       lose ? 'bg-red-100 border-red-300 text-red-500' :
-                       isc  ? 'bg-blue-100 border-blue-400 text-blue-700' :
-                               'bg-white border-blue-100 text-gray-700')}>
-                    {win && '✅ '}{lose && '❌ '}{item.word}
+                  <motion.button key={item.w} onClick={() => pick(item)}
+                    whileHover={!chosen ? { scale:1.04, y:-3 } : {}}
+                    whileTap={!chosen ? { scale:0.95 } : {}}
+                    animate={lose ? { x:[-5,5,-5,5,0] } : win ? { scale:[1,1.08,1] } : {}}
+                    transition={{ duration:0.3 }}
+                    className={`py-5 px-3 rounded-3xl border-2 font-black text-lg sm:text-xl shadow-md transition-all leading-tight ${
+                      win  ? 'bg-green-100 border-green-400 text-green-700 shadow-green-200' :
+                      lose ? 'bg-red-100 border-red-300 text-red-500' :
+                      isc  ? 'bg-blue-100 border-blue-400 text-blue-700' :
+                             'bg-white border-gray-200 text-gray-700 hover:border-blue-300 active:bg-blue-50'
+                    }`}>
+                    {win && '✅ '}{lose && '❌ '}{item.w}
                   </motion.button>
                 )
               })}
             </div>
           ) : (
+            // Emoji image choice grid
             <div className="grid grid-cols-2 gap-3">
               {opts.map(item => {
-                const isc  = chosen === item.word
-                const win  = !!result && item.word === cur?.word
-                const lose = !!result && isc && item.word !== cur?.word
+                const isc = chosen === item.w
+                const win = !!result && item.w === cur?.w
+                const lose = !!result && isc && item.w !== cur?.w
                 return (
-                  <motion.button key={item.word} onClick={() => pick(item)}
-                    whileHover={!chosen ? { scale:1.04, y:-2 } : {}}
-                    whileTap={!chosen ? { scale:0.96 } : {}}
-                    animate={lose ? { x:[-4,4,-4,0] } : {}}
-                    className={'py-5 rounded-3xl border-2 flex flex-col items-center gap-1 shadow-md ' +
-                      (win ? 'bg-green-50 border-green-400' :
-                       lose ? 'bg-red-50 border-red-300' :
-                       isc  ? 'bg-blue-50 border-blue-400' : 'bg-white border-blue-100')}>
-                    <span className="text-5xl select-none">{item.emoji}</span>
-                    {result && (win || isc) && <span className="text-xs font-bold text-gray-500">{item.word}</span>}
+                  <motion.button key={item.w} onClick={() => pick(item)}
+                    whileHover={!chosen ? { scale:1.04, y:-3 } : {}}
+                    whileTap={!chosen ? { scale:0.95 } : {}}
+                    animate={lose ? { x:[-5,5,-5,5,0] } : win ? { scale:[1,1.08,1] } : {}}
+                    transition={{ duration:0.3 }}
+                    className={`py-4 sm:py-6 rounded-3xl border-2 flex flex-col items-center gap-2 shadow-md transition-all ${
+                      win  ? 'bg-green-50 border-green-400 shadow-green-200' :
+                      lose ? 'bg-red-50 border-red-300' :
+                      isc  ? 'bg-blue-50 border-blue-400' :
+                             'bg-white border-gray-200 hover:border-blue-300 active:bg-blue-50'
+                    }`}>
+                    <span className="text-5xl sm:text-6xl select-none leading-none">{item.e}</span>
+                    {result && (win || isc) && (
+                      <span className={`text-sm font-black ${win ? 'text-green-600' : 'text-red-500'}`}>{item.w}</span>
+                    )}
                   </motion.button>
                 )
               })}
             </div>
           )}
 
+          {/* Result feedback */}
           <AnimatePresence>
             {result && (
               <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                className={'text-center py-3 rounded-2xl font-black text-lg ' + (result === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-50 text-orange-600')}>
-                {result === 'ok' ? '✅ Correct! It\'s a ' + cur?.word + '!' : '❌ The answer is: ' + cur?.word + ' ' + cur?.emoji}
+                className={`text-center py-3 px-4 rounded-2xl font-black text-base sm:text-lg ${
+                  result === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-50 text-orange-600'
+                }`}>
+                {result === 'ok'
+                  ? ['✅ Correct!', '⭐ Amazing!', '🎉 Well done!', '🔥 Perfect!'][Math.floor(Math.random()*4)] + ' It\'s "' + cur?.w + '"!'
+                  : '❌ The answer is: ' + cur?.w + ' ' + cur?.e}
               </motion.div>
             )}
           </AnimatePresence>
@@ -281,26 +421,26 @@ export default function EnglishGame() {
   )
 }
 
-function Screen({ title, sub, children, back }) {
-  return (
-    <div className="min-h-screen p-5 max-w-md mx-auto bg-gradient-to-br from-sky-50 to-blue-50">
-      <div className="pt-4 mb-6">
-        {back && <button onClick={back} className="text-sm text-gray-400 mb-3 flex items-center gap-1 hover:text-gray-600">→ חזרה</button>}
-        <h1 className="text-3xl font-black text-blue-700">{title}</h1>
-        {sub && <p className="text-gray-400 mt-1">{sub}</p>}
-      </div>
-      <div className="flex flex-col gap-3">{children}</div>
-    </div>
-  )
+function playWin() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    ;[[523,0,0.12],[659,0.08,0.12],[784,0.16,0.2]].forEach(([f,s,d]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain()
+      o.connect(g); g.connect(ctx.destination); o.frequency.value = f; o.type = 'sine'
+      const t = ctx.currentTime + s
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.3,t+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+d)
+      o.start(t); o.stop(t+d)
+    })
+  } catch {}
 }
 
-function Row({ children, onClick, i }) {
-  return (
-    <motion.button onClick={onClick}
-      initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: i * 0.1 }}
-      whileHover={{ scale:1.03, y:-3 }} whileTap={{ scale:0.97 }}
-      className="w-full flex items-center gap-4 bg-white rounded-3xl p-5 shadow-md border-2 border-blue-100 hover:border-blue-300 transition-all">
-      {children}
-    </motion.button>
-  )
+function playErr() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const o = ctx.createOscillator(), g = ctx.createGain()
+    o.connect(g); g.connect(ctx.destination); o.frequency.value = 250; o.type = 'sine'
+    const t = ctx.currentTime
+    g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.25)
+    o.start(t); o.stop(t+0.25)
+  } catch {}
 }

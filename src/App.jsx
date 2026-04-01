@@ -12,7 +12,8 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/spelling" element={<ListenAndBuild />} />
+        <Route path="/english" element={<EnglishGame />} />
+          <Route path="/spelling" element={<ListenAndBuild />} />
           <Route path="/english" element={<EnglishGame />} />
         <Route path="/math" element={<CalculateGame />} />
         <Route path="/admin" element={<AdminWords />} />
