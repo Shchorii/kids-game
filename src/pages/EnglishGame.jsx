@@ -170,6 +170,8 @@ export default function EnglishGame() {
   useEffect(() => {
     if (!cur) return
     setSentence(null)
+    setSentenceLoading(false)
+    _prefetchedSentence.current = null
     // Pre-fetch audio silently so Listen button is instant (no auto-play — iOS blocks it)
     const audioFetch = setTimeout(() => {
       const key = 'en:' + cur.w
@@ -204,6 +206,7 @@ export default function EnglishGame() {
     if (_prefetchedSentence.current?.word === cur.w && _prefetchedSentence.current?.sentence) {
       const s = _prefetchedSentence.current.sentence
       setSentence(s)
+      setSentenceLoading(false)
       setTimeout(() => speak(s), 200)
       return
     }
