@@ -149,6 +149,8 @@ export default function EnglishGame() {
   const [phase, setPhase]           = useState('main') // 'main' | 'review'
   const [celebrating, setCelebrating] = useState(false)  // full-screen correct moment
   const [wrongChosen, setWrongChosen] = useState(null)   // track the wrong pick
+  const [sentence, setSentence]       = useState(null)   // AI-generated sentence
+  const [sentenceLoading, setSentenceLoading] = useState(false)
 
   const cat  = catKey ? CATEGORIES[catKey] : null
   const pool = cat ? cat.words : []
@@ -164,13 +166,34 @@ export default function EnglishGame() {
     }
   }, [catKey, mode])
 
-  // Auto-speak on new word
+  // Auto-speak on new word + reset sentence
   useEffect(() => {
     if (!cur) return
+    setSentence(null)
     const delay = mode === 'listen' ? 400 : 600
     const t = setTimeout(() => speak(cur.w), delay)
     return () => clearTimeout(t)
   }, [cur?.w, mode])
+
+  async function fetchSentence() {
+    if (!cur || sentenceLoading) return
+    setSentenceLoading(true)
+    setSentence(null)
+    try {
+      const r = await fetch('/api/sentence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: cur.w }),
+      })
+      const data = await r.json()
+      if (data.sentence) {
+        setSentence(data.sentence)
+        // Speak it aloud after a short pause
+        setTimeout(() => speak(data.sentence), 400)
+      }
+    } catch { setSentence('I love the ' + cur.w + '!') }
+    setSentenceLoading(false)
+  }
 
   function next() {
     const nextIdx = idx + 1
@@ -389,10 +412,34 @@ export default function EnglishGame() {
                 <p className="text-xs text-gray-300">בחר את התרגום הנכון</p>
               </>
             )}
-            <button onClick={() => cur && speak(cur.w)}
-              className={`mt-3 mx-auto flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border-2 ${cat.border} ${cat.text} font-bold text-sm shadow-sm`}>
-              <Volume2 className="w-4 h-4" /> {mode === 'listen' ? 'שמע שוב' : 'Listen'}
-            </button>
+            <div className="mt-3 flex flex-col items-center gap-2 w-full">
+              <button onClick={() => cur && speak(cur.w)}
+                className={`mx-auto flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border-2 ${cat.border} ${cat.text} font-bold text-sm shadow-sm`}>
+                <Volume2 className="w-4 h-4" /> {mode === 'listen' ? 'שמע שוב' : 'Listen'}
+              </button>
+              <button onClick={fetchSentence} disabled={sentenceLoading}
+                className={`mx-auto flex items-center gap-2 px-4 py-2 rounded-2xl font-bold text-sm shadow-sm transition-all ${
+                  sentenceLoading
+                    ? 'bg-gray-100 text-gray-400 border-2 border-gray-200 cursor-wait'
+                    : 'bg-white border-2 border-purple-200 text-purple-600 hover:bg-purple-50'
+                }`}>
+                {sentenceLoading ? '💭 thinking...' : '🗣️ Use in a sentence'}
+              </button>
+              {sentence && cur && (
+                <div className="w-full mt-1 px-4 py-3 rounded-2xl bg-purple-50 border-2 border-purple-200 text-center">
+                  <p className="text-base font-semibold text-gray-700 leading-relaxed">
+                    {sentence.split(new RegExp('(' + cur.w + ')', 'i')).map((part, i) =>
+                      part.toLowerCase() === cur.w.toLowerCase()
+                        ? <span key={i} className={`font-black underline decoration-2 ${cat.text}`}>{part}</span>
+                        : <span key={i}>{part}</span>
+                    )}
+                  </p>
+                  <button onClick={() => speak(sentence)} className="mt-2 text-xs text-purple-400 flex items-center gap-1 mx-auto">
+                    <Volume2 className="w-3 h-3" /> hear it again
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Choices */}
