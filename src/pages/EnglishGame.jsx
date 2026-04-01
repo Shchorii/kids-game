@@ -152,6 +152,9 @@ export default function EnglishGame() {
   const [sentence, setSentence]       = useState(null)   // AI-generated sentence
   const [sentenceLoading, setSentenceLoading] = useState(false)
 
+  const nextTimer = useRef(null)
+  const _prefetchedSentence = useRef(null)
+
   const cat  = catKey ? CATEGORIES[catKey] : null
   const pool = cat ? cat.words : []
   const cur  = queue[idx] || null
