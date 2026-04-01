@@ -92,15 +92,43 @@ function getChoices(correct, pool) {
   return shuffle([correct, ...others])
 }
 
-function speak(word, lang = 'en-US') {
+// Audio cache to avoid repeated API calls
+const _cache = {}
+
+async function speak(word) {
+  if (!word) return
+  const key = 'en:' + word
+  try {
+    // Use cached URL if available
+    if (_cache[key]) {
+      const audio = new Audio(_cache[key])
+      audio.play().catch(() => _browserFallback(word))
+      return
+    }
+    // Call OpenAI TTS via our server
+    const r = await fetch('/api/tts-en', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: word }),
+    })
+    if (!r.ok) throw new Error('TTS failed')
+    const blob = await r.blob()
+    const url = URL.createObjectURL(blob)
+    _cache[key] = url
+    const audio = new Audio(url)
+    audio.play().catch(() => _browserFallback(word))
+  } catch {
+    _browserFallback(word)
+  }
+}
+
+function _browserFallback(word) {
   if (!window.speechSynthesis) return
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(word)
-  u.lang = lang; u.rate = 0.82; u.pitch = 1.1
-  const voices = window.speechSynthesis.getVoices()
-  const voice = lang === 'en-US'
-    ? (voices.find(v => v.name === 'Samantha') || voices.find(v => v.lang === 'en-US'))
-    : (voices.find(v => v.name === 'Carmit') || voices.find(v => v.lang.startsWith('he')))
+  u.lang = 'en-US'; u.rate = 0.85
+  const v = window.speechSynthesis.getVoices()
+  const voice = v.find(x => x.name === 'Samantha') || v.find(x => x.lang === 'en-US')
   if (voice) u.voice = voice
   window.speechSynthesis.speak(u)
 }
