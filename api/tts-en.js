@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         model: 'tts-1',
         voice: 'nova',      // warm, friendly — best for kids
         input: text.trim(),
-        speed: 0.9,         // slightly slower, clearer for learners
+        speed: 0.75,         // slightly slower, clearer for learners
       }),
     })
 
