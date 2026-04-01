@@ -143,11 +143,12 @@ export default function EnglishGame() {
   const [idx, setIdx]           = useState(0)
   const [stars, setStars]       = useState(0)
   const [mistakes, setMistakes] = useState([])  // for spaced repetition
-  const [chosen, setChosen]     = useState(null)
-  const [result, setResult]     = useState(null)
-  const [done, setDone]         = useState(false)
-  const [phase, setPhase]       = useState('main') // 'main' | 'review'
-  const nextTimer = useRef(null)
+  const [chosen, setChosen]         = useState(null)
+  const [result, setResult]         = useState(null)
+  const [done, setDone]             = useState(false)
+  const [phase, setPhase]           = useState('main') // 'main' | 'review'
+  const [celebrating, setCelebrating] = useState(false)  // full-screen correct moment
+  const [wrongChosen, setWrongChosen] = useState(null)   // track the wrong pick
 
   const cat  = catKey ? CATEGORIES[catKey] : null
   const pool = cat ? cat.words : []
@@ -187,20 +188,38 @@ export default function EnglishGame() {
   }
 
   function pick(item) {
-    if (chosen || !cur) return
-    setChosen(item.w)
+    // If already correct, block
+    if (result === 'ok' || !cur) return
+    // If this specific wrong option was already tried, block that button only
+    if (wrongChosen === item.w) return
+
     const win = item.w === cur.w
-    setResult(win ? 'ok' : 'bad')
     if (win) {
+      // CORRECT — celebrate, let kid press Next themselves
+      setChosen(item.w)
+      setResult('ok')
+      setWrongChosen(null)
       setStars(s => s + 1)
       playWin()
+      speak(cur.w)
+      setTimeout(() => setCelebrating(true), 300)
     } else {
+      // WRONG — shake, mark that specific button, kid must try again
+      setWrongChosen(item.w)
+      setResult('bad')
       setMistakes(m => m.find(x => x.w === cur.w) ? m : [...m, cur])
       playErr()
+      // Clear wrong state after shake so they can try other options
+      setTimeout(() => setResult(null), 1000)
     }
-    speak(cur.w)
-    clearTimeout(nextTimer.current)
-    nextTimer.current = setTimeout(next, win ? 1000 : 1800)
+  }
+
+  function handleNext() {
+    setCelebrating(false)
+    setChosen(null)
+    setResult(null)
+    setWrongChosen(null)
+    next()
   }
 
   if (!name) return <NamePrompt title="English Time! 🇬🇧" emoji="🔤" onStart={setName} />
@@ -385,18 +404,19 @@ export default function EnglishGame() {
                 const win = !!result && item.w === cur?.w
                 const lose = !!result && isc && item.w !== cur?.w
                 return (
-                  <motion.button key={item.w} onClick={() => pick(item)}
-                    whileHover={!chosen ? { scale:1.04, y:-3 } : {}}
-                    whileTap={!chosen ? { scale:0.95 } : {}}
-                    animate={lose ? { x:[-5,5,-5,5,0] } : win ? { scale:[1,1.08,1] } : {}}
+                  <motion.button key={item.w}
+                    onClick={() => pick(item)}
+                    disabled={result === 'ok' || wrongChosen === item.w}
+                    whileHover={result !== 'ok' && wrongChosen !== item.w ? { scale:1.04, y:-3 } : {}}
+                    whileTap={result !== 'ok' && wrongChosen !== item.w ? { scale:0.95 } : {}}
+                    animate={wrongChosen === item.w ? { x:[-6,6,-6,6,0] } : win ? { scale:[1,1.1,1] } : {}}
                     transition={{ duration:0.3 }}
                     className={`py-5 px-3 rounded-3xl border-2 font-black text-lg sm:text-xl shadow-md transition-all leading-tight ${
-                      win  ? 'bg-green-100 border-green-400 text-green-700 shadow-green-200' :
-                      lose ? 'bg-red-100 border-red-300 text-red-500' :
-                      isc  ? 'bg-blue-100 border-blue-400 text-blue-700' :
-                             'bg-white border-gray-200 text-gray-700 hover:border-blue-300 active:bg-blue-50'
+                      win             ? 'bg-green-100 border-green-500 text-green-700 shadow-green-200 scale-105' :
+                      wrongChosen === item.w ? 'bg-red-100 border-red-400 text-red-500 opacity-70' :
+                                        'bg-white border-gray-200 text-gray-700 hover:border-blue-300 active:bg-blue-50'
                     }`}>
-                    {win && '✅ '}{lose && '❌ '}{item.w}
+                    {win && '✅ '}{wrongChosen === item.w && '❌ '}{item.w}
                   </motion.button>
                 )
               })}
@@ -409,21 +429,21 @@ export default function EnglishGame() {
                 const win = !!result && item.w === cur?.w
                 const lose = !!result && isc && item.w !== cur?.w
                 return (
-                  <motion.button key={item.w} onClick={() => pick(item)}
-                    whileHover={!chosen ? { scale:1.04, y:-3 } : {}}
-                    whileTap={!chosen ? { scale:0.95 } : {}}
-                    animate={lose ? { x:[-5,5,-5,5,0] } : win ? { scale:[1,1.08,1] } : {}}
+                  <motion.button key={item.w}
+                    onClick={() => pick(item)}
+                    disabled={result === 'ok' || wrongChosen === item.w}
+                    whileHover={result !== 'ok' && wrongChosen !== item.w ? { scale:1.04, y:-3 } : {}}
+                    whileTap={result !== 'ok' && wrongChosen !== item.w ? { scale:0.95 } : {}}
+                    animate={wrongChosen === item.w ? { x:[-6,6,-6,6,0] } : win ? { scale:[1,1.1,1] } : {}}
                     transition={{ duration:0.3 }}
                     className={`py-4 sm:py-6 rounded-3xl border-2 flex flex-col items-center gap-2 shadow-md transition-all ${
-                      win  ? 'bg-green-50 border-green-400 shadow-green-200' :
-                      lose ? 'bg-red-50 border-red-300' :
-                      isc  ? 'bg-blue-50 border-blue-400' :
-                             'bg-white border-gray-200 hover:border-blue-300 active:bg-blue-50'
+                      win             ? 'bg-green-50 border-green-500 shadow-green-200 scale-105' :
+                      wrongChosen === item.w ? 'bg-red-50 border-red-400 opacity-70' :
+                                        'bg-white border-gray-200 hover:border-blue-300 active:bg-blue-50'
                     }`}>
                     <span className="text-5xl sm:text-6xl select-none leading-none">{item.e}</span>
-                    {result && (win || isc) && (
-                      <span className={`text-sm font-black ${win ? 'text-green-600' : 'text-red-500'}`}>{item.w}</span>
-                    )}
+                    {win && <span className="text-sm font-black text-green-600">{item.w}</span>}
+                    {wrongChosen === item.w && <span className="text-sm font-black text-red-500">❌</span>}
                   </motion.button>
                 )
               })}
@@ -431,19 +451,70 @@ export default function EnglishGame() {
           )}
 
           {/* Result feedback */}
+          {/* Wrong answer hint */}
           <AnimatePresence>
-            {result && (
-              <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                className={`text-center py-3 px-4 rounded-2xl font-black text-base sm:text-lg ${
-                  result === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-50 text-orange-600'
-                }`}>
-                {result === 'ok'
-                  ? ['✅ Correct!', '⭐ Amazing!', '🎉 Well done!', '🔥 Perfect!'][Math.floor(Math.random()*4)] + ' It\'s "' + cur?.w + '"!'
-                  : '❌ The answer is: ' + cur?.w + ' ' + cur?.e}
+            {wrongChosen && result === null && (
+              <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }}
+                className="text-center py-3 px-4 rounded-2xl bg-red-50 border-2 border-red-200 text-red-600 font-black text-base">
+                ❌ Try again! Listen carefully 👂
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
+      </AnimatePresence>
+      {/* Full-screen celebration overlay */}
+      <AnimatePresence>
+        {celebrating && cur && (
+          <motion.div
+            initial={{ opacity:0 }}
+            animate={{ opacity:1 }}
+            exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          >
+            <motion.div
+              initial={{ scale:0.3, y:60 }}
+              animate={{ scale:1, y:0 }}
+              exit={{ scale:0.3, y:60 }}
+              transition={{ type:'spring', stiffness:300, damping:20 }}
+              className="bg-white rounded-4xl p-8 text-center max-w-xs w-full shadow-2xl"
+            >
+              {/* Bouncing emoji */}
+              <motion.div
+                animate={{ y:[0,-20,0,-12,0], scale:[1,1.2,1,1.1,1] }}
+                transition={{ duration:0.8, repeat:2 }}
+                className="text-8xl mb-4 select-none"
+              >
+                {cur.e}
+              </motion.div>
+              {/* Stars burst */}
+              <motion.div className="text-3xl mb-3"
+                animate={{ scale:[0,1.3,1] }} transition={{ delay:0.2, duration:0.4 }}>
+                ⭐⭐⭐
+              </motion.div>
+              <motion.div
+                initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3 }}
+                className={`text-3xl font-black mb-1 ${cat.text}`}
+              >
+                {['Amazing! 🎉', 'Perfect! 🔥', 'Well done! ⭐', 'Correct! 🏆'][stars % 4]}
+              </motion.div>
+              <motion.div
+                initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.4 }}
+                className="text-xl font-black text-gray-600 mb-6"
+              >
+                {cur.he} = <span className={cat.text}>{cur.w}</span>
+              </motion.div>
+              <motion.button
+                onClick={handleNext}
+                initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.5 }}
+                whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
+                className={`w-full py-4 rounded-2xl bg-gradient-to-br ${cat.color} text-white font-black text-xl shadow-lg`}
+              >
+                Next →
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   )
