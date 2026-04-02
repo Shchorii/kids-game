@@ -1,8 +1,24 @@
 // src/pages/EnglishGame.jsx
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Component } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Volume2, Home, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+
+// Error boundary to catch render crashes and show the actual error
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(e) { return { error: e.message } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{padding:20,color:'red',fontFamily:'monospace',fontSize:12,whiteSpace:'pre-wrap'}}>
+          CRASH: {this.state.error}
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 import NamePrompt from '@/components/game/NamePrompt'
 
 // ─── Vocabulary bank — 6 thematic categories ────────────────────────────────
@@ -159,7 +175,7 @@ function _browserFallback(word) {
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-export default function EnglishGame() {
+function EnglishGameInner() {
   const nav = useNavigate()
   const [name, setName]         = useState(null)
   const [catKey, setCatKey]     = useState(null)  // selected category
@@ -292,6 +308,8 @@ export default function EnglishGame() {
     setChosen(null)
     setResult(null)
     setWrongChosen(null)
+    setSentence(null)
+    setSentenceLoading(false)
     next()
   }
 
@@ -617,4 +635,8 @@ function playErr() {
     g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.25)
     o.start(t); o.stop(t+0.25)
   } catch {}
+}
+
+export default function EnglishGame() {
+  return <ErrorBoundary><EnglishGameInner /></ErrorBoundary>
 }
