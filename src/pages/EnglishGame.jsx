@@ -92,55 +92,46 @@ function getChoices(correct, pool) {
   return shuffle([correct, ...others])
 }
 
-// Audio cache: word -> ArrayBuffer (raw MP3 bytes, persists across renders)
+// Audio cache: word -> blob URL (same pattern as Hebrew game — most iOS-compatible)
 const _audioCache = {}
-let _audioCtx = null
 
-function getCtx() {
-  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-  return _audioCtx
-}
-
-// Call on every user tap to keep AudioContext unlocked on iOS
-function unlockAudio() {
+// Pre-fetch audio in background and cache blob URL — so speak() is instant on tap
+async function prefetchAudio(word) {
+  if (_audioCache[word]) return
   try {
-    const ctx = getCtx()
-    if (ctx.state === 'suspended') ctx.resume()
-    // Play a silent buffer — required to fully unlock iOS Safari AudioContext
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate)
-    const src = ctx.createBufferSource()
-    src.buffer = buf
-    src.connect(ctx.destination)
-    src.start(0)
+    const r = await fetch('/api/tts-en', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: word }),
+    })
+    if (!r.ok) return
+    const blob = await r.blob()
+    _audioCache[word] = URL.createObjectURL(blob)
   } catch {}
 }
 
-async function speak(word) {
+// speak() mirrors speakHebrew() from lib/api.js — new Audio(blobUrl).play()
+// Must be called from a user gesture (tap) for iOS — pre-fetch handles latency
+function speak(word) {
   if (!word) return
-  try {
-    const ctx = getCtx()
-    if (ctx.state === 'suspended') await ctx.resume()
-    // Use cached ArrayBuffer if available
-    let buf = _audioCache[word]
-    if (!buf) {
-      const r = await fetch('/api/tts-en', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: word }),
-      })
-      if (!r.ok) throw new Error('tts failed')
-      buf = await r.arrayBuffer()
-      _audioCache[word] = buf
-    }
-    // Decode and play via AudioContext (works on iOS after any user gesture)
-    const decoded = await ctx.decodeAudioData(buf.slice(0))
-    const src = ctx.createBufferSource()
-    src.buffer = decoded
-    src.connect(ctx.destination)
-    src.start(0)
-  } catch {
-    _browserFallback(word)
+  if (_audioCache[word]) {
+    const audio = new Audio(_audioCache[word])
+    audio.onerror = () => _browserFallback(word)
+    audio.play().catch(() => _browserFallback(word))
+    return
   }
+  // Not cached — fetch then play (works on direct tap even on iOS)
+  fetch('/api/tts-en', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: word }),
+  }).then(r => r.blob()).then(blob => {
+    const url = URL.createObjectURL(blob)
+    _audioCache[word] = url
+    const audio = new Audio(url)
+    audio.onerror = () => _browserFallback(word)
+    audio.play().catch(() => _browserFallback(word))
+  }).catch(() => _browserFallback(word))
 }
 
 function _browserFallback(word) {
@@ -196,8 +187,8 @@ export default function EnglishGame() {
     setSentence(null)
     setSentenceLoading(false)
     _prefetchedSentence.current = null
-    // Auto-speak word — AudioContext already unlocked by category/mode tap
-    const autoSpeak = setTimeout(() => speak(cur.w), 300)
+    // Pre-fetch audio so Listen button is instant; auto-speak fires after fetch
+    prefetchAudio(cur.w).then(() => speak(cur.w))
     // Pre-fetch sentence in background
     const sentFetch = setTimeout(() => {
       fetch('/api/sentence', {
@@ -305,7 +296,7 @@ export default function EnglishGame() {
       <p className="text-center text-gray-400 font-medium mb-5">בחר קטגוריה</p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {Object.entries(CATEGORIES).map(([key, c], i) => (
-          <motion.button key={key} onClick={() => { unlockAudio(); setCatKey(key) }}
+          <motion.button key={key} onClick={() => setCatKey(key)}
             initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: i*0.07 }}
             whileHover={{ scale:1.04, y:-3 }} whileTap={{ scale:0.96 }}
             className={`flex flex-col items-center gap-2 bg-white rounded-3xl p-5 shadow-md border-2 ${c.border} hover:shadow-lg transition-all`}>
@@ -333,7 +324,7 @@ export default function EnglishGame() {
       <p className="text-center text-gray-400 font-medium mb-5">בחר מצב משחק</p>
       <div className="flex flex-col gap-3">
         {MODES.map((m, i) => (
-          <motion.button key={m.v} onClick={() => { unlockAudio(); setMode(m.v) }}
+          <motion.button key={m.v} onClick={() => setMode(m.v)}
             initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay: i*0.1 }}
             whileHover={{ scale:1.02, y:-2 }} whileTap={{ scale:0.98 }}
             className={`w-full flex items-center gap-4 bg-white rounded-3xl p-5 shadow-md border-2 ${cat.border} hover:shadow-lg transition-all`}>
