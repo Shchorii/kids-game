@@ -231,7 +231,7 @@ function EnglishGameInner() {
         }
       }).catch(() => {})
     }, 500)
-    return () => { clearTimeout(autoSpeak); clearTimeout(sentFetch) }
+    return () => { clearTimeout(sentFetch) }
   }, [cur?.w, mode])
 
   async function fetchSentence() {
