@@ -94,6 +94,15 @@ function getChoices(correct, pool) {
 
 // Audio cache: word -> blob URL (same pattern as Hebrew game — most iOS-compatible)
 const _audioCache = {}
+let _currentAudio = null  // track playing instance to prevent duplicates
+
+function stopCurrent() {
+  if (_currentAudio) {
+    _currentAudio.pause()
+    _currentAudio.currentTime = 0
+    _currentAudio = null
+  }
+}
 
 // Pre-fetch audio in background and cache blob URL — so speak() is instant on tap
 async function prefetchAudio(word) {
@@ -110,17 +119,18 @@ async function prefetchAudio(word) {
   } catch {}
 }
 
-// speak() mirrors speakHebrew() from lib/api.js — new Audio(blobUrl).play()
-// Must be called from a user gesture (tap) for iOS — pre-fetch handles latency
+// speak() — stops any current audio first to prevent duplicates
 function speak(word) {
   if (!word) return
+  stopCurrent()
   if (_audioCache[word]) {
     const audio = new Audio(_audioCache[word])
-    audio.onerror = () => _browserFallback(word)
-    audio.play().catch(() => _browserFallback(word))
+    _currentAudio = audio
+    audio.onended = () => { _currentAudio = null }
+    audio.onerror = () => { _currentAudio = null; _browserFallback(word) }
+    audio.play().catch(() => { _currentAudio = null; _browserFallback(word) })
     return
   }
-  // Not cached — fetch then play (works on direct tap even on iOS)
   fetch('/api/tts-en', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -128,9 +138,12 @@ function speak(word) {
   }).then(r => r.blob()).then(blob => {
     const url = URL.createObjectURL(blob)
     _audioCache[word] = url
+    stopCurrent()
     const audio = new Audio(url)
-    audio.onerror = () => _browserFallback(word)
-    audio.play().catch(() => _browserFallback(word))
+    _currentAudio = audio
+    audio.onended = () => { _currentAudio = null }
+    audio.onerror = () => { _currentAudio = null; _browserFallback(word) }
+    audio.play().catch(() => { _currentAudio = null; _browserFallback(word) })
   }).catch(() => _browserFallback(word))
 }
 
@@ -187,6 +200,7 @@ export default function EnglishGame() {
     setSentence(null)
     setSentenceLoading(false)
     _prefetchedSentence.current = null
+    stopCurrent()  // stop any audio from previous word
     // Pre-fetch audio so Listen button is instant; auto-speak fires after fetch
     prefetchAudio(cur.w).then(() => speak(cur.w))
     // Pre-fetch sentence in background
