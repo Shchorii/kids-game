@@ -361,7 +361,7 @@ export default function EnglishGame() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-blue-50">
         <motion.div initial={{ scale:0.7, opacity:0 }} animate={{ scale:1, opacity:1 }}
           transition={{ type:'spring', stiffness:300, damping:20 }}
-          className="bg-white rounded-4xl p-8 shadow-xl text-center max-w-sm w-full border-2 border-blue-100">
+          className="bg-white rounded-3xl p-8 shadow-xl text-center max-w-sm w-full border-2 border-blue-100">
           <motion.div animate={{ rotate:[0,15,-15,10,-10,0] }} transition={{ delay:0.3, duration:0.8 }}
             className="text-7xl mb-3">
             {pct >= 80 ? '🏆' : pct >= 50 ? '⭐' : '💪'}
@@ -436,7 +436,7 @@ export default function EnglishGame() {
           className="flex flex-col gap-4 flex-1">
 
           {/* Word card */}
-          <div className="bg-white rounded-4xl shadow-lg border-2 border-white/80 p-5 text-center">
+          <div className="bg-white rounded-3xl shadow-lg border-2 border-white/80 p-5 text-center">
             {mode === 'img2word' && (
               <>
                 <p className={`text-sm font-bold mb-2 ${cat.text}`}>מה זה באנגלית? 🤔</p>
@@ -565,14 +565,14 @@ export default function EnglishGame() {
             animate={{ opacity:1 }}
             exit={{ opacity:0 }}
             className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'rgba(0,0,0,0.75)' }}
           >
             <motion.div
               initial={{ scale:0.3, y:60 }}
               animate={{ scale:1, y:0 }}
               exit={{ scale:0.3, y:60 }}
               transition={{ type:'spring', stiffness:300, damping:20 }}
-              className="bg-white rounded-4xl p-8 text-center max-w-xs w-full shadow-2xl"
+              className="bg-white rounded-3xl p-8 text-center max-w-xs w-full shadow-2xl"
             >
               {/* Bouncing emoji */}
               <motion.div
