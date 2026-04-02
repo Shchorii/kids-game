@@ -103,7 +103,16 @@ function getCtx() {
 
 // Call on every user tap to keep AudioContext unlocked on iOS
 function unlockAudio() {
-  try { const ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume() } catch {}
+  try {
+    const ctx = getCtx()
+    if (ctx.state === 'suspended') ctx.resume()
+    // Play a silent buffer — required to fully unlock iOS Safari AudioContext
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate)
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.connect(ctx.destination)
+    src.start(0)
+  } catch {}
 }
 
 async function speak(word) {
