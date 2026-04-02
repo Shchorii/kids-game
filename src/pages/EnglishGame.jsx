@@ -616,9 +616,18 @@ export default function EnglishGame() {
   )
 }
 
+// Shared AudioContext for sound effects — iOS allows only a few instances total
+let _sfxCtx = null
+function getSfxCtx() {
+  if (!_sfxCtx || _sfxCtx.state === 'closed')
+    _sfxCtx = new (window.AudioContext || window.webkitAudioContext)()
+  if (_sfxCtx.state === 'suspended') _sfxCtx.resume()
+  return _sfxCtx
+}
+
 function playWin() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const ctx = getSfxCtx()
     ;[[523,0,0.12],[659,0.08,0.12],[784,0.16,0.2]].forEach(([f,s,d]) => {
       const o = ctx.createOscillator(), g = ctx.createGain()
       o.connect(g); g.connect(ctx.destination); o.frequency.value = f; o.type = 'sine'
@@ -631,7 +640,7 @@ function playWin() {
 
 function playErr() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const ctx = getSfxCtx()
     const o = ctx.createOscillator(), g = ctx.createGain()
     o.connect(g); g.connect(ctx.destination); o.frequency.value = 250; o.type = 'sine'
     const t = ctx.currentTime
