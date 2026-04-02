@@ -557,61 +557,31 @@ export default function EnglishGame() {
           </AnimatePresence>
         </motion.div>
       </AnimatePresence>
-      {/* Full-screen celebration overlay */}
-      <AnimatePresence>
-        {celebrating && cur && (
-          <motion.div
-            initial={{ opacity:0 }}
-            animate={{ opacity:1 }}
-            exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6"
-            style={{ background: 'rgba(0,0,0,0.75)' }}
-          >
-            <motion.div
-              initial={{ scale:0.3, y:60 }}
-              animate={{ scale:1, y:0 }}
-              exit={{ scale:0.3, y:60 }}
-              transition={{ type:'spring', stiffness:300, damping:20 }}
-              className="bg-white rounded-3xl p-8 text-center max-w-xs w-full shadow-2xl"
+      {/* Full-screen celebration overlay — plain CSS, no Framer Motion (mobile safe) */}
+      {celebrating && cur && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6"
+          style={{ background: 'rgba(0,0,0,0.75)' }}
+        >
+          <div className="bg-white rounded-3xl p-8 text-center max-w-xs w-full shadow-2xl">
+            <div className="text-8xl mb-4 select-none">{cur.e}</div>
+            <div className="text-3xl mb-3">⭐⭐⭐</div>
+            <div className={`text-3xl font-black mb-1 ${cat.text}`}>
+              {['Amazing! 🎉', 'Perfect! 🔥', 'Well done! ⭐', 'Correct! 🏆'][stars % 4]}
+            </div>
+            <div className="text-xl font-black text-gray-600 mb-6">
+              {cur.he} = <span className={cat.text}>{cur.w}</span>
+            </div>
+            <button
+              onClick={handleNext}
+              style={{ touchAction: 'manipulation' }}
+              className={`w-full py-4 rounded-2xl bg-gradient-to-br ${cat.color} text-white font-black text-xl shadow-lg active:scale-95`}
             >
-              {/* Bouncing emoji */}
-              <motion.div
-                animate={{ y:[0,-20,0,-12,0], scale:[1,1.2,1,1.1,1] }}
-                transition={{ duration:0.8, repeat:2 }}
-                className="text-8xl mb-4 select-none"
-              >
-                {cur.e}
-              </motion.div>
-              {/* Stars burst */}
-              <motion.div className="text-3xl mb-3"
-                animate={{ scale:[0,1.3,1] }} transition={{ delay:0.2, duration:0.4 }}>
-                ⭐⭐⭐
-              </motion.div>
-              <motion.div
-                initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3 }}
-                className={`text-3xl font-black mb-1 ${cat.text}`}
-              >
-                {['Amazing! 🎉', 'Perfect! 🔥', 'Well done! ⭐', 'Correct! 🏆'][stars % 4]}
-              </motion.div>
-              <motion.div
-                initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.4 }}
-                className="text-xl font-black text-gray-600 mb-6"
-              >
-                {cur.he} = <span className={cat.text}>{cur.w}</span>
-              </motion.div>
-              <motion.button
-                onClick={handleNext}
-                initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.5 }}
-                whileHover={{ scale:1.05 }} whileTap={{ scale:0.95 }}
-                style={{ touchAction: 'manipulation' }}
-                className={`w-full py-4 rounded-2xl bg-gradient-to-br ${cat.color} text-white font-black text-xl shadow-lg`}
-              >
-                Next →
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
