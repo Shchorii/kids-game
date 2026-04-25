@@ -2,9 +2,9 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Headphones, Calculator, Trophy, Settings, Star, BookOpen } from 'lucide-react'
+import { Headphones, Calculator, Trophy, Settings, Star, BookOpen, Flame } from 'lucide-react'
 import { getSavedName } from '@/lib/storage'
-import { getProgress } from '@/lib/api'
+import { getProgress, getWords } from '@/lib/api'
 
 const GAME_CARDS = [
   {
@@ -43,10 +43,31 @@ export default function Home() {
   const navigate = useNavigate()
   const name = getSavedName()
   const [progress, setProgress] = useState(null)
+  const [dictation, setDictation] = useState(null) // { label, count, expiresAt }
 
   useEffect(() => {
     if (name) getProgress(name).then(setProgress).catch(() => {})
   }, [name])
+
+  useEffect(() => {
+    // Find any active (non-expired) dictation list
+    getWords().then((ws) => {
+      const labeled = ws.filter((w) => w.label) // expires_at already filtered server-side
+      if (!labeled.length) return
+      // Group by label, pick the one with the soonest expiry
+      const byLabel = labeled.reduce((acc, w) => {
+        ;(acc[w.label] = acc[w.label] || []).push(w)
+        return acc
+      }, {})
+      const [label, words] = Object.entries(byLabel)
+        .sort(([, a], [, b]) => {
+          const ea = a[0].expires_at ? new Date(a[0].expires_at).getTime() : Infinity
+          const eb = b[0].expires_at ? new Date(b[0].expires_at).getTime() : Infinity
+          return ea - eb
+        })[0]
+      setDictation({ label, count: words.length, expiresAt: words[0].expires_at })
+    }).catch(() => {})
+  }, [])
 
   return (
     <div className="min-h-screen p-5 max-w-md mx-auto" style={{ background: 'var(--bg)' }}>
@@ -91,6 +112,36 @@ export default function Home() {
           <StatPill icon={<BookOpen className="w-4 h-4 text-violet-500" />} value={progress.words_completed || 0} label="מילים" color="purple" />
           <StatPill icon={<span className="text-sm">🧮</span>} value={progress.math_stars || 0} label="חשבון" color="orange" />
         </motion.div>
+      )}
+
+      {/* Dictation banner — appears only while there's an active dictation list */}
+      {dictation && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.05, type: 'spring', stiffness: 280, damping: 22 }}
+          onClick={() => navigate(`/spelling?label=${encodeURIComponent(dictation.label)}`)}
+          whileHover={{ scale: 1.02, y: -3 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative w-full overflow-hidden rounded-4xl p-5 mb-5 shadow-lg shadow-orange-200 text-right border-2 border-orange-300 bg-gradient-to-br from-orange-400 via-red-400 to-rose-500"
+        >
+          <motion.div
+            className="absolute -left-6 -top-6 w-32 h-32 rounded-full bg-yellow-300 opacity-30 blur-2xl"
+            animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.45, 0.3] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+          />
+          <div className="relative flex items-center gap-4">
+            <div className="w-14 h-14 rounded-3xl bg-white/25 backdrop-blur flex items-center justify-center shadow-md flex-shrink-0">
+              <Flame className="w-7 h-7 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="text-lg font-black text-white leading-tight">הכתבה השבועית 🔥</div>
+              <div className="text-xs text-white/90 font-bold mt-0.5">{dictation.label}</div>
+              <div className="text-xs text-white/75 font-medium mt-0.5">{dictation.count} מילים · התאמני לפני יום חמישי!</div>
+            </div>
+            <span className="text-3xl">📝</span>
+          </div>
+        </motion.button>
       )}
 
       {/* Game cards */}

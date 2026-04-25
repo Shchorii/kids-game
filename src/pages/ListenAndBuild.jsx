@@ -1,6 +1,7 @@
 // src/pages/ListenAndBuild.jsx
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Volume2, Lightbulb, RotateCcw } from 'lucide-react'
 import GameHeader from '@/components/game/GameHeader'
 import LetterTile from '@/components/game/LetterTile'
@@ -25,6 +26,9 @@ const LEVELS = [
 ]
 
 export default function ListenAndBuild() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const dictationLabel = searchParams.get('label') // when set → dictation mode (no grade/level pickers)
   const [childName, setChildName]       = useState(null)
   const [grade, setGrade]               = useState(null)
   const [level, setLevel]               = useState(null)
@@ -55,13 +59,22 @@ export default function ListenAndBuild() {
   const totalWords         = words.length
 
   useEffect(() => {
+    if (dictationLabel) {
+      // Dictation mode — fetch ALL words with this label, ignore grade/level
+      getWords(null, null, dictationLabel).then((ws) => {
+        setWords(ws.sort(() => Math.random() - 0.5))
+        setWordIndex(0); setStars(0); setCorrectCount(0); setWrongCount(0)
+        setTotalTime(0); setBestTime(null)
+      }).catch(() => {})
+      return
+    }
     if (!grade || !level) return
     getWords(grade, level).then((ws) => {
       setWords(ws.sort(() => Math.random() - 0.5))
       setWordIndex(0); setStars(0); setCorrectCount(0); setWrongCount(0)
       setTotalTime(0); setBestTime(null)
     }).catch(() => {})
-  }, [grade, level])
+  }, [grade, level, dictationLabel])
 
   useEffect(() => {
     if (!currentWord) return
@@ -134,7 +147,7 @@ export default function ListenAndBuild() {
 
   if (!childName) return <NamePrompt title="שמע ובנה 🎧" emoji="🎧" onStart={setChildName} />
 
-  if (!grade) return (
+  if (!dictationLabel && !grade) return (
     <Picker title={`שלום ${childName}! 👋`} subtitle="בחר כיתה" bg="from-emerald-50 to-teal-50">
       {GRADES.map((g, i) => (
         <motion.button key={g.value} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
@@ -150,7 +163,7 @@ export default function ListenAndBuild() {
     </Picker>
   )
 
-  if (!level) {
+  if (!dictationLabel && !level) {
     const gi = GRADES.find((g) => g.value === grade)
     return (
       <Picker title={gi.label} subtitle="בחר רמת קושי" onBack={() => setGrade(null)} bg="from-violet-50 to-purple-50">
@@ -180,8 +193,8 @@ export default function ListenAndBuild() {
   const levelInfo = LEVELS.find((l) => l.value === level)
 
   return (
-    <div className={`min-h-screen p-4 max-w-md mx-auto bg-gradient-to-br ${getThemeBg(grade, level)}`}>
-      <FloatingObjects grade={grade} level={level} />
+    <div className={`min-h-screen p-4 max-w-md mx-auto bg-gradient-to-br ${dictationLabel ? 'from-orange-50 to-red-50' : getThemeBg(grade, level)}`}>
+      {!dictationLabel && <FloatingObjects grade={grade} level={level} />}
       <div className="flex items-start justify-between mb-1">
         <div className="flex-1">
           <GameHeader stars={stars} current={wordIndex + 1} total={totalWords} childName={childName} />
@@ -190,14 +203,23 @@ export default function ListenAndBuild() {
           <Mascot mood={mascotMood} streak={streak} />
         </div>
       </div>
-      <div className="flex items-center gap-2 mb-4">
-        <button onClick={() => { setGrade(null); setLevel(null) }}
-          className={`text-xs font-bold px-3 py-1.5 rounded-full border-2 ${gradeInfo.border} ${gradeInfo.bg} ${gradeInfo.text}`}>
-          {gradeInfo.emoji} {gradeInfo.label}
-        </button>
-        <span className={`text-xs font-bold px-3 py-1.5 rounded-full border-2 ${gradeInfo.border} ${gradeInfo.bg} ${gradeInfo.text}`}>
-          {levelInfo.emoji} {levelInfo.label}
-        </span>
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {dictationLabel ? (
+          <button onClick={() => navigate('/')}
+            className="text-xs font-black px-3 py-1.5 rounded-full border-2 bg-orange-100 border-orange-300 text-orange-700">
+            🔥 {dictationLabel}
+          </button>
+        ) : (
+          <>
+            <button onClick={() => { setGrade(null); setLevel(null) }}
+              className={`text-xs font-bold px-3 py-1.5 rounded-full border-2 ${gradeInfo.border} ${gradeInfo.bg} ${gradeInfo.text}`}>
+              {gradeInfo.emoji} {gradeInfo.label}
+            </button>
+            <span className={`text-xs font-bold px-3 py-1.5 rounded-full border-2 ${gradeInfo.border} ${gradeInfo.bg} ${gradeInfo.text}`}>
+              {levelInfo.emoji} {levelInfo.label}
+            </span>
+          </>
+        )}
         {streak >= 2 && (
           <motion.span
             initial={{ scale: 0 }} animate={{ scale: 1 }}

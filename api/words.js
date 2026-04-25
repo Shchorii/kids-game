@@ -147,7 +147,7 @@ async function setCustomWords(words) { await kv.set(CUSTOM_KEY, words) }
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const { grade, level } = req.query
+    const { grade, level, label } = req.query
     const custom = await getCustomWords()
     const now = Date.now()
     let words = [...BUILT_IN_WORDS, ...custom]
@@ -157,6 +157,7 @@ export default async function handler(req, res) {
       .filter((w) => !w.expires_at || new Date(w.expires_at).getTime() > now)
     if (grade) words = words.filter((w) => w.grade === parseInt(grade))
     if (level) words = words.filter((w) => w.level === parseInt(level))
+    if (label) words = words.filter((w) => w.label === label)
     return res.status(200).json(words)
   }
   if (req.method === 'POST') {

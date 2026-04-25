@@ -4,8 +4,12 @@ const BASE = '/api'
 
 // ── Words ──────────────────────────────────────────────────────────────────
 
-export async function getWords(grade, level) {
-  const params = new URLSearchParams(); if (grade) params.set('grade', grade); if (level) params.set('level', level); const res = await fetch(`${BASE}/words?${params}`)
+export async function getWords(grade, level, label) {
+  const params = new URLSearchParams()
+  if (grade) params.set('grade', grade)
+  if (level) params.set('level', level)
+  if (label) params.set('label', label)
+  const res = await fetch(`${BASE}/words?${params}`)
   if (!res.ok) throw new Error('Failed to fetch words')
   return res.json()
 }
