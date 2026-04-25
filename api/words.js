@@ -123,6 +123,21 @@ const BUILT_IN_WORDS = [
   { word_plain: 'עננים',     word_niqqud: 'עֲנָנִים',       grade: 3, level: 3 },
   { word_plain: 'הורים',     word_niqqud: 'הוֹרִים',        grade: 3, level: 3 },
   { word_plain: 'חברות',     word_niqqud: 'חַבְרוּת',       grade: 3, level: 3 },
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ══ הכתבות שבועיות — מתפוגגות אוטומטית אחרי expires_at              ══
+  // ══════════════════════════════════════════════════════════════════════
+  // הכתבה 30/04/2026 — נושא: אש ובטיחות (כיתה ב׳)
+  { word_plain: 'אור',     word_niqqud: 'אוֹר',       grade: 2, level: 1, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'אש',      word_niqqud: 'אֵשׁ',       grade: 2, level: 1, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'להבה',    word_niqqud: 'לֶהָבָה',    grade: 2, level: 2, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'הדלקה',   word_niqqud: 'הַדְלָקָה',  grade: 2, level: 2, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'כיבוי',   word_niqqud: 'כִּיבּוּי',  grade: 2, level: 2, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'דליק',    word_niqqud: 'דָּלִיק',    grade: 2, level: 2, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'סכנה',    word_niqqud: 'סַכָּנָה',   grade: 2, level: 2, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'אבוקה',   word_niqqud: 'אֲבוּקָה',   grade: 2, level: 2, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'גיצים',   word_niqqud: 'גִּיצִים',   grade: 2, level: 2, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
+  { word_plain: 'לא דליק', word_niqqud: 'לֹא דָלִיק', grade: 2, level: 3, expires_at: '2026-04-30T21:00:00.000Z', label: 'הכתבה 30/04 — אש ובטיחות' },
 ].map((w, i) => ({ ...w, id: `builtin_${i + 1}`, active: true, builtin: true }))
 
 async function getCustomWords() {
