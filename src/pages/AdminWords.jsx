@@ -152,6 +152,14 @@ export default function AdminWords() {
                         <div className="flex gap-1 flex-wrap">
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${gc.bg} ${gc.border} ${gc.text}`}>{GRADE_LABELS[word.grade]}</span>
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${lc.bg} ${lc.border} ${lc.text}`}>{LEVEL_LABELS[word.level]}</span>
+                          {word.label && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-lg border bg-orange-50 border-orange-200 text-orange-700">📝 {word.label}</span>
+                          )}
+                          {word.expires_at && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-lg border bg-amber-50 border-amber-200 text-amber-700">
+                              ⏳ עד {new Date(word.expires_at).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}
+                            </span>
+                          )}
                         </div>
                       </div>
                       {!word.builtin && <button onClick={() => handleDelete(word.id)} className="text-red-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-4 h-4" /></button>}

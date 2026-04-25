@@ -134,22 +134,30 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { grade, level } = req.query
     const custom = await getCustomWords()
-    let words = [...BUILT_IN_WORDS, ...custom].filter((w) => w.active !== false)
+    const now = Date.now()
+    let words = [...BUILT_IN_WORDS, ...custom]
+      .filter((w) => w.active !== false)
+      // expires_at is optional — if set, hide the word once that time has passed.
+      // Used for time-limited dictation lists (e.g. "this week's הכתבה").
+      .filter((w) => !w.expires_at || new Date(w.expires_at).getTime() > now)
     if (grade) words = words.filter((w) => w.grade === parseInt(grade))
     if (level) words = words.filter((w) => w.level === parseInt(level))
     return res.status(200).json(words)
   }
   if (req.method === 'POST') {
-    const { word_plain, word_niqqud, grade = 1, level = 1 } = req.body || {}
+    const { word_plain, word_niqqud, grade = 1, level = 1, expires_at, label } = req.body || {}
     if (!word_plain) return res.status(400).json({ error: 'word_plain required' })
     const custom = await getCustomWords()
     const newWord = {
-      id: `custom_${Date.now()}`,
+      id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       word_plain: word_plain.trim(),
       word_niqqud: word_niqqud?.trim() || null,
       grade: parseInt(grade), level: parseInt(level),
       active: true, builtin: false,
       created_at: new Date().toISOString(),
+      // Optional fields for time-limited dictation lists
+      ...(expires_at ? { expires_at } : {}),
+      ...(label ? { label } : {}),
     }
     custom.push(newWord)
     await setCustomWords(custom)
