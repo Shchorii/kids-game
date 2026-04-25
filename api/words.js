@@ -1,6 +1,6 @@
 // api/words.js — word management with built-in bank + custom words
 
-import { kv } from '@vercel/kv'
+import { kv } from './_lib/redis.js'
 
 const CUSTOM_KEY = 'words:custom'
 
@@ -163,21 +163,26 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { word_plain, word_niqqud, grade = 1, level = 1, expires_at, label } = req.body || {}
     if (!word_plain) return res.status(400).json({ error: 'word_plain required' })
-    const custom = await getCustomWords()
-    const newWord = {
-      id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      word_plain: word_plain.trim(),
-      word_niqqud: word_niqqud?.trim() || null,
-      grade: parseInt(grade), level: parseInt(level),
-      active: true, builtin: false,
-      created_at: new Date().toISOString(),
-      // Optional fields for time-limited dictation lists
-      ...(expires_at ? { expires_at } : {}),
-      ...(label ? { label } : {}),
+    try {
+      const custom = await getCustomWords()
+      const newWord = {
+        id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        word_plain: word_plain.trim(),
+        word_niqqud: word_niqqud?.trim() || null,
+        grade: parseInt(grade), level: parseInt(level),
+        active: true, builtin: false,
+        created_at: new Date().toISOString(),
+        // Optional fields for time-limited dictation lists
+        ...(expires_at ? { expires_at } : {}),
+        ...(label ? { label } : {}),
+      }
+      custom.push(newWord)
+      await setCustomWords(custom)
+      return res.status(201).json(newWord)
+    } catch (err) {
+      console.error('[words POST] failed:', err)
+      return res.status(500).json({ error: 'KV write failed', detail: String(err?.message || err) })
     }
-    custom.push(newWord)
-    await setCustomWords(custom)
-    return res.status(201).json(newWord)
   }
   return res.status(405).json({ error: 'Method not allowed' })
 }

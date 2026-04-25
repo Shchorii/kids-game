@@ -1,6 +1,6 @@
 // api/leaderboard.js
 
-import { kv } from '@vercel/kv'
+import { kv } from './_lib/redis.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })

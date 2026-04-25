@@ -1,6 +1,6 @@
 // api/words/[id].js — update or delete a single word
 
-import { kv } from '@vercel/kv'
+import { kv } from '../_lib/redis.js'
 
 const KEY = 'words:all'
 

@@ -1,6 +1,6 @@
 // api/progress.js
 
-import { kv } from '@vercel/kv'
+import { kv } from './_lib/redis.js'
 
 function key(name) {
   return `progress:${name.toLowerCase().trim()}`

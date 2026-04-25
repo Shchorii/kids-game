@@ -1,6 +1,6 @@
 // api/sessions.js — save & retrieve math sessions
 
-import { kv } from '@vercel/kv'
+import { kv } from './_lib/redis.js'
 
 function key(name) {
   return `sessions:${name.toLowerCase().trim()}`
