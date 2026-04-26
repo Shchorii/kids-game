@@ -1,18 +1,29 @@
-// api/check-kv.js — diagnostic, will remove
-import { Redis } from '@upstash/redis'
+// api/check-kv.js — diagnostic, will remove after fix verified
+import { kv } from './_lib/redis.js'
 
 export default async function handler(req, res) {
-  const url = process.env.KV_REST_API_URL || ''
   try {
-    const redis = new Redis({ url, token: process.env.KV_REST_API_TOKEN })
-    const pong = await redis.ping()
-    return res.status(200).json({ ok: true, host: url.replace('https://', ''), ping: pong })
+    const pong = await kv.ping()
+    // Test a write/read round-trip
+    const testKey = '_diagnostic_check'
+    const testVal = { ts: Date.now(), source: 'check-kv' }
+    await kv.set(testKey, testVal)
+    const readBack = await kv.get(testKey)
+    await kv.del(testKey)
+    return res.status(200).json({
+      ok: true,
+      ping: pong,
+      write_read_roundtrip: readBack,
+      backend: 'github-contents',
+      repo: process.env.STORAGE_REPO || '(not set)',
+    })
   } catch (err) {
     return res.status(500).json({
       ok: false,
-      host: url.replace('https://', ''),
       error: String(err?.message || err),
-      cause: String(err?.cause?.message || err?.cause || ''),
+      backend: 'github-contents',
+      repo: process.env.STORAGE_REPO || '(not set)',
+      has_token: !!process.env.STORAGE_TOKEN,
     })
   }
 }
