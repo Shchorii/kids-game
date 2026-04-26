@@ -2,7 +2,7 @@
 
 import { kv } from '../_lib/redis.js'
 
-const KEY = 'words:all'
+const KEY = 'words:custom'
 
 export default async function handler(req, res) {
   const { id } = req.query
